@@ -5,7 +5,7 @@
    ───────────────────────────────────────────────────────────────────────────── */
 
 import { h, S, clear, qsa } from './core/dom.js';
-import { LESSONS, GROUPS, STATUS, byId, depth, ancestry, descendants } from './registry.js';
+import { LESSONS, GROUPS, STATUS, PLANNED, byId, depth, ancestry, descendants } from './registry.js';
 import { curvePath } from './core/dom.js';
 
 const NODE_W = 158, NODE_H = 42, GAP_X = 58, GAP_Y = 30, PAD = 30;
@@ -119,8 +119,8 @@ export function renderMap(root, onNav) {
       'Hover a box to light up its whole chain — everything you need before it, and everything it goes on to make possible.'),
     h('div', { class: 'cs-legend' },
       h('span', {}, h('i', { style: { background: 'var(--cs-data-green)' } }), `${counts.live || 0} built`),
-      h('span', {}, h('i', { style: { background: 'var(--cs-amber)' } }), `${counts.wip || 0} in progress`),
-      h('span', {}, h('i', { style: { background: 'var(--cs-dim)' } }), `${counts.planned || 0} not started`),
+      ...(counts.wip ? [h('span', {}, h('i', { style: { background: 'var(--cs-amber)' } }), `${counts.wip} in progress`)] : []),
+      h('span', {}, h('i', { style: { background: 'var(--cs-dim)' } }), `${PLANNED.length} not started`),
       ...Object.entries(GROUPS).map(([k, g]) =>
         h('span', {}, h('i', { style: { background: `var(--cs-accent-${g.accent})` } }), g.label)),
     ),
@@ -131,6 +131,25 @@ export function renderMap(root, onNav) {
     h('div', { class: 'cs-grid' },
       ...[...LESSONS].sort((a, b) => depth(a.id, memo) - depth(b.id, memo) || a.title.localeCompare(b.title))
         .map((l, i) => lessonCard(l, i, onNav))),
+
+    h('h2', { style: { marginTop: 'var(--cs-space-16)' } }, 'not built yet'),
+    h('p', { class: 'cs-page-lede' },
+      'What is missing, and where each one would slot in. Nothing here is hidden behind a ',
+      h('span', { class: 'cs-inline-code' }, '[coming soon]'),
+      ' — if a topic is on this list, there is no lesson for it and you should go and read someone else on it.'),
+    h('div', { class: 'cs-grid' }, ...PLANNED.map(p => {
+      const after = byId(p.after);
+      return h('div', { class: 'cs-card', style: { '--card-accent': 'var(--cs-dim)', cursor: 'default' } },
+        h('span', { class: 'cs-card-kicker', style: { color: 'var(--cs-muted)' } }, 'NOT STARTED'),
+        h('span', { class: 'cs-card-title', style: { color: 'var(--cs-muted)' } }, p.title),
+        h('span', { class: 'cs-card-desc' }, p.note),
+        h('span', { class: 'cs-card-foot' },
+          h('span', { class: 'cs-badge cs-badge-soon' }, 'not yet'),
+          after ? h('button', {
+            class: 'cs-dep-chip needs', onclick: () => onNav(after.id),
+          }, 'would follow ' + (after.short || after.title)) : null),
+      );
+    })),
   ));
 }
 

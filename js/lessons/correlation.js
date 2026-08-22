@@ -88,6 +88,24 @@ const axesFor = (f, s, d, o = {}) => axes(f, {
   ...o,
 });
 
+/**
+ * Nudge labels apart when their anchor points nearly coincide. The geyser data
+ * has two eruptions at almost the same coordinates, and without this their
+ * numbers print on top of each other.
+ */
+function declutter(anchors, { dx = 46, dy = 13, step = 12 } = {}) {
+  const placed = [];
+  return anchors.map(a => {
+    let y = a.y, tries = 0;
+    while (tries < 6 && placed.some(p => Math.abs(p.x - a.x) < dx && Math.abs(p.y - y) < dy)) {
+      y = a.y + (tries % 2 ? 1 : -1) * step * Math.ceil((tries + 1) / 2);
+      tries++;
+    }
+    placed.push({ x: a.x, y });
+    return y;
+  });
+}
+
 /** a row of squares sitting on a baseline, areas drawn to one common scale */
 function squareRow(devs, { key, cls, baseY, x0, x1, mergeTo = null, k, labelEach = false, dur }) {
   const sides = devs.map(v => Math.abs(v) * k);
@@ -119,8 +137,8 @@ const RO = {
   n: { key: 'n', label: 'n', get: s => D(s).n, d: 0 },
   mx: { key: 'mx', label: 'x̄', tone: 'cyan', get: s => D(s).mx, d: 3, link: 'meanx' },
   my: { key: 'my', label: 'ȳ', tone: 'purple', get: s => D(s).my, d: 2, link: 'meany' },
-  sx: { key: 'sx', label: 's_x', tone: 'cyan', get: s => D(s).sx, d: 3 },
-  sy: { key: 'sy', label: 's_y', tone: 'purple', get: s => D(s).sy, d: 2 },
+  sx: { key: 'sx', label: 's<sub>x</sub>', tone: 'cyan', get: s => D(s).sx, d: 3 },
+  sy: { key: 'sy', label: 's<sub>y</sub>', tone: 'purple', get: s => D(s).sy, d: 2 },
   cov: { key: 'cov', label: 'cov(x,y)', tone: 'gold', get: s => D(s).cov, d: 3, wide: true },
   r: { key: 'r', label: 'r', tone: 'green', get: s => D(s).r, d: 3, fmt: v => st.fmtR(v, 3) },
   r2: { key: 'r2', label: 'r²', tone: 'green', get: s => D(s).r ** 2, d: 3, fmt: v => st.fmtR(v, 3) },
@@ -462,6 +480,12 @@ export default {
           note: 'Each stick has a length with a sign. <b>Hover the sticks.</b>',
           scene: (s, ctx) => {
             const { f, d } = fitted(s);
+            // hang each number off the point end, then nudge any that collide
+            const anchors = s.pts.map(p => ({
+              x: f.sx(p[0]) + ((p[0] - d.mx) >= 0 ? 11 : -11),
+              y: f.sy(p[1] * (s.yUnit === 'sec' ? 60 : 1)) + 4,
+            }));
+            const ys = declutter(anchors);
             return [
               ...axesFor(f, s, d), vLine(f, d.mx, { key: 'mx', cls: 'rule-x link-meanx' }),
               ...s.pts.map((p, i) => {
@@ -473,11 +497,9 @@ export default {
                   attrs: { x1: f.sx(d.mx), y1: f.sy(yv), x2: f.sx(p[0]), y2: f.sy(yv) },
                   tip: `x − x̄ = <b>${dev.toFixed(3)}</b>`,
                 },
-                // hang the number off the point end, so points at similar
-                // heights don't stack their labels on top of each other
-                label(`sxl-${i}`, f.sx(p[0]) + (dev >= 0 ? 11 : -11), f.sy(yv) + 4,
+                label(`sxl-${i}`, anchors[i].x, ys[i],
                   (dev >= 0 ? '+' : '−') + Math.abs(dev).toFixed(2),
-                  { cls: `lab-sm link-devx ${dev >= 0 ? 'lab-warm' : 'lab-cold'}${dev >= 0 ? '' : ' lab-end'}`, delay: i * 40 })];
+                  { cls: `lab-sm link-devx ${dev >= 0 ? 'lab-warm' : 'lab-cold lab-end'}`, delay: i * 40 })];
               }),
               ...scatter(s, f, d, ctx, { opacity: 0.5 }),
             ];
@@ -581,7 +603,7 @@ export default {
         `${t(sup('s', '2') + sub('', 'y'), { tone: 'purple', explain: 'The sample variance of y.' })} ${eq} ` +
         frac(sumOver(paren(devY()) + sup('', '2')), nMinus1()),
         { caption: 'same four moves: subtract, square, sum, divide' }),
-      readouts: [RO.my, { key: 'vy', label: 's²_y', tone: 'purple', get: s => st.variance(D(s).y), d: 3 }, RO.sy],
+      readouts: [RO.my, { key: 'vy', label: 's²<sub>y</sub>', tone: 'purple', get: s => st.variance(D(s).y), d: 3 }, RO.sy],
       dep: { note: 'This is the same calculation the <b>t-test</b> uses to decide whether two group means differ.', lesson: 'ttest', label: 't-tests' },
       beats: [
         {

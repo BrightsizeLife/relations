@@ -210,6 +210,23 @@ export function depth(id, memo = new Map()) {
   return d;
 }
 
+/**
+ * Not built. Listed openly rather than left as a silent gap, because the map is
+ * supposed to tell you what you can learn here and what you cannot.
+ */
+export const PLANNED = [
+  { title: 'mixed-effects models', after: 'multiple', note: 'partial pooling, random intercepts and slopes, and why shrinkage is not a compromise' },
+  { title: 'survival analysis', after: 'glm', note: 'censoring, Kaplan–Meier, and the Cox partial likelihood' },
+  { title: 'time series', after: 'linreg', note: 'autocorrelation, differencing, and why the CLT stops protecting you' },
+  { title: 'principal components', after: 'matrix', note: 'eigenvectors as the directions the data actually varies in' },
+  { title: 'directed acyclic graphs', after: 'causal', note: 'choosing what to control for, and how adjusting can create bias' },
+  { title: 'measurement & reliability', after: 'correlation', note: 'attenuation, Cronbach\'s alpha, and what a scale score is' },
+  { title: 'power analysis', after: 'ttest', note: 'the fourth corner of the α / effect / n / power square' },
+  { title: 'bootstrapping', after: 'clt', note: 'resampling your way to a standard error when no formula exists' },
+  { title: 'gradient boosting', after: 'randomforest', note: 'fitting trees to the mistakes of the previous trees' },
+  { title: 'regularisation', after: 'multiple', note: 'ridge, lasso, and trading a little bias for a lot of variance' },
+];
+
 export const STATUS = {
   live: { label: 'built', cls: 'live' },
   wip: { label: 'in progress', cls: 'wip' },
