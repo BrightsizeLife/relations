@@ -192,10 +192,10 @@ export function label(key, x, y, text, { cls = 'lab', dur, anchor, delay = 0, op
 }
 
 /** a value that animates in place, e.g. a running sum drawn on the canvas */
-export function numLabel(key, x, y, v, { cls = 'lab', d = 2, pre = '', suf = '', dur, anchor, opacity = 1, delay = 0, fmt } = {}) {
+export function numLabel(key, x, y, v, { cls = 'lab', d = 2, pre = '', suf = '', dur, anchor, opacity = 1, delay = 0, fmt, from } = {}) {
   return {
     key, tag: 'text', cls, dur, opacity, delay,
-    attrs: { x, y }, num: { v, d, pre, suf, fmt },
+    attrs: { x, y }, num: { v, d, pre, suf, fmt, from },
     set: anchor ? { 'text-anchor': anchor } : undefined,
     enter: { opacity: 0 },
   };

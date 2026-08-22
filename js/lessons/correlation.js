@@ -8,6 +8,7 @@
 
 import * as st from '../core/stats.js';
 import { frame, axes, points, hLine, vLine, label, numLabel, path, rect, fnPath, fnArea, arrowDefs, dragger, COLORS } from '../core/plot.js';
+import { BENCH, slots, byMagnitude, surface, devBar, chain, moveBadge } from '../core/bench.js';
 import { range, clamp } from '../core/dom.js';
 import { formula, t, frac, sqrt, sub, sup, bar, sumOver, paren, devX, devY, nMinus1, eq, minus, times, inline, op } from '../core/fx.js';
 
@@ -59,9 +60,9 @@ function fitted(s) {
 
 /* ── shared marks ─────────────────────────────────────────────────────────── */
 
-function scatter(s, f, d, ctx, { cls = 'pt pt-drag', opacity = 1, stagger = 0, delay = 0, upTo = 99 } = {}) {
+function scatter(s, f, d, ctx, { cls = 'pt pt-drag', opacity = 1, stagger = 0, delay = 0, upTo = 99, r = 6.5 } = {}) {
   return points(f, s.pts.slice(0, upTo), {
-    key: 'p', r: 6.5, cls, delay, stagger, opacity,
+    key: 'p', r, cls, delay, stagger, opacity,
     x: p => p[0], y: p => p[1] * (s.yUnit === 'sec' ? 60 : 1),
     tip: (p, i) => `<b>#${i + 1}</b><br>x = ${p[0].toFixed(3)} min<br>y = ${(p[1] * (s.yUnit === 'sec' ? 60 : 1)).toFixed(0)} ${d.unit}` +
       `<br><span class="warm">x − x̄ = ${(p[0] - d.mx).toFixed(3)}</span>` +
@@ -80,6 +81,61 @@ function scatter(s, f, d, ctx, { cls = 'pt pt-drag', opacity = 1, stagger = 0, d
       pointerdown: e => { s.__drag = i; it.on.pointerdown(e); },
     },
   }));
+}
+
+
+/* ── the deviation bench ──────────────────────────────────────────────────────
+   A deviation is a rectangle from the moment it appears: a bar three pixels
+   tall lying in the plot. The same element, same key, then flies to the bench
+   and grows its height until it is a square. Nothing is ever redrawn, so the
+   reader watches one object change rather than one picture replace another. */
+
+/** the plot, squeezed into the top half so the bench has somewhere to stand */
+function topFrame(s) {
+  const d = D(s);
+  const f = frame({ w: 720, h: 540, l: 66, r: 28, t: 30, b: 306 });
+  f.fit(d.x, d.y, 0.12);
+  return { f, d };
+}
+
+const yOf = (s, i) => s.pts[i][1] * (s.yUnit === 'sec' ? 60 : 1);
+const xraw = s => D(s).x;
+const xdev = s => { const d = D(s); return d.x.map(v => v - d.mx); };
+const ydev = s => { const d = D(s); return d.y.map(v => v - d.my); };
+
+const devBarX = (i, v, o) => devBar(i, v, { key: 'dx', cls: 'link-devx', ...o });
+const devBarY = (i, v, o) => devBar(i, v, { key: 'dy', cls: 'link-devy', ...o });
+
+/** everything a bench beat needs: slots, the common scale, and the sort order */
+function benchFor(devs, opts = {}) {
+  const sl = slots(devs.length, opts);
+  return { sl, k: sl.scaleFor(Math.max(...devs.map(Math.abs))), rank: byMagnitude(devs) };
+}
+
+/** the x deviations while they are still lying in the scatter */
+function devsX(s, f, d, { only = null, stagger = 0 } = {}) {
+  const devs = xdev(s);
+  const sl = slots(devs.length);
+  return devs.map((v, i) => (only != null && i !== only ? null : devBarX(i, v, {
+    mode: 'plot', k: 1, sl, delay: i * stagger,
+    plotFrom: f.sx(d.mx), plotTo: f.sx(s.pts[i][0]), plotY: f.sy(yOf(s, i)),
+    tip: `x − x̄ = <b>${v.toFixed(3)}</b>`,
+  }))).filter(Boolean);
+}
+
+/** the same thing for y — vertical in the plot, identical on the bench */
+function devsY(s, f, d, { only = null, stagger = 0 } = {}) {
+  const devs = ydev(s);
+  const sl = slots(devs.length);
+  return devs.map((v, i) => (only != null && i !== only ? null : {
+    ...devBarY(i, v, { mode: 'slot', k: 1, sl }),
+    attrs: {
+      x: f.sx(s.pts[i][0]) - 1.5, y: Math.min(f.sy(d.my), f.sy(yOf(s, i))),
+      width: 3, height: Math.abs(f.sy(yOf(s, i)) - f.sy(d.my)),
+    },
+    delay: i * stagger,
+    tip: `y − ȳ = <b>${v.toFixed(2)}</b>`,
+  })).filter(Boolean);
 }
 
 const axesFor = (f, s, d, o = {}) => axes(f, {
@@ -443,147 +499,223 @@ export default {
     /* ── 6 ─────────────────────────────────────────────────────────────── */
     {
       title: 'how spread out is x?',
-      prose: `<p>Here is the move that the rest of statistics is built on. For each point, measure the <strong>distance from the mean</strong>. That distance is called a <em>deviation</em>.</p>
-        <p>Then a problem: the deviations always add up to exactly zero. That is what "balance point" means, so the raw distances can't measure spread — they cancel.</p>
-        <p>The fix is to <strong>square</strong> them. Squaring kills the minus signs, and — this is the part worth feeling — it turns a length into an <em>area</em>. Spread stops being a distance and becomes a pile of squares.</p>`,
+      prose: `<p>Here is the move the rest of statistics is built on, and it is worth going slowly.</p>
+        <p>For one point, measure the <strong>distance from the mean</strong>. That distance is a <em>deviation</em>. Then lift it out of the picture and put it on a bench, because we are going to do arithmetic to it.</p>
+        <p>The first thing that arithmetic reveals is a problem: the deviations always add up to exactly zero. That is what "balance point" means. So the raw distances cannot measure spread — they cancel.</p>
+        <p>The fix is to <strong>square</strong> each one. Watch what squaring actually does: the bar keeps its length and grows a second dimension, so a <em>length</em> turns into an <em>area</em>. That is not a metaphor on this page. It is the same rectangle the whole way through.</p>`,
+      aside: `<b>Why n − 1 and not n?</b> You already spent one piece of your data working out x̄. Once you know the mean and eleven of the deviations, the twelfth is forced — it has no freedom left. So you have n − 1 independent pieces of information, and dividing by n − 1 is what keeps the estimate honest rather than slightly too small.`,
       formula: formula(
         `${t(sup('s', '2') + sub('', 'x'), { explain: 'The sample variance of x: the average squared deviation.', tone: 'cyan' })} ${eq} ` +
         frac(sumOver(paren(devX()) + sup('', '2')), nMinus1()) +
         `${op('&nbsp;&nbsp;→&nbsp;&nbsp;')} ${t(sub('s', 'x'), { explain: 'The standard deviation: the square root of the variance, back in the original units (minutes).', tone: 'cyan' })} ${eq} ${sqrt(sup('s', '2'))}`,
         { caption: 'hover any piece of the formula — the drawing will answer' }),
-      aside: `<b>Why n − 1 and not n?</b> You already spent one piece of your data working out x̄. Once you know the mean and eleven of the deviations, the twelfth is forced — it has no freedom left. So you have n − 1 independent pieces of information, and dividing by n − 1 is what keeps the estimate honest rather than slightly too small.`,
       readouts: [RO.n, RO.mx, { key: 'ss', label: 'Σ(x−x̄)²', tone: 'gold', get: s => { const d = D(s); return st.sum(d.x.map(v => (v - d.mx) ** 2)); }, d: 3, wide: true }, { key: 'vx', label: 's²ₓ', tone: 'cyan', get: s => st.variance(D(s).x), d: 4 }, RO.sx],
       beats: [
         {
-          label: 'the deviations',
-          note: 'One horizontal stick per point, from the point to the <b>x̄</b> line. Warm sticks reach right (above average), cold sticks reach left.',
+          label: 'one point',
+          hold: 1400,
+          note: 'Start with a single eruption. How far is it from <b>x̄</b>? Nothing else on the plot matters yet.',
+          scene: (s, ctx) => {
+            const { f, d } = fitted(s);
+            const i = 0;
+            return [
+              ...axesFor(f, s, d),
+              vLine(f, d.mx, { key: 'mx', cls: 'rule-x link-meanx' }),
+              ...scatter(s, f, d, ctx, { opacity: (p, k) => (k === i ? 1 : 0.16) }),
+              devsX(s, f, d, { mode: 'plot', only: i }),
+              label('one', f.sx(s.pts[i][0]) + 12, f.sy(yOf(s, i)) - 14, 'this one', { cls: 'lab lab-gold' }),
+            ];
+          },
+        },
+        {
+          label: 'measure it',
+          hold: 1500,
+          note: 'The bar reaches from the mean line out to the point. Its <b>length</b> is the deviation, and its direction is the sign.',
+          scene: (s, ctx) => {
+            const { f, d } = fitted(s);
+            const i = 0, dev = s.pts[i][0] - d.mx;
+            return [
+              ...axesFor(f, s, d),
+              vLine(f, d.mx, { key: 'mx', cls: 'rule-x link-meanx' }),
+              ...scatter(s, f, d, ctx, { opacity: (p, k) => (k === i ? 1 : 0.16) }),
+              devsX(s, f, d, { mode: 'plot', only: i }),
+              label('num', (f.sx(d.mx) + f.sx(s.pts[i][0])) / 2, f.sy(yOf(s, i)) - 12,
+                (dev >= 0 ? '+' : '−') + Math.abs(dev).toFixed(3), { cls: 'lab-big lab-mid lab-warm' }),
+              label('expl', f.midX, f.y1 + 8, `${s.pts[i][0].toFixed(3)} − ${d.mx.toFixed(3)} = ${dev.toFixed(3)}`,
+                { cls: 'lab lab-mid' }),
+            ];
+          },
+        },
+        {
+          label: 'do it for all twelve',
+          hold: 1600,
+          note: 'The same measurement, eleven more times. <b>Hover any bar.</b>',
           scene: (s, ctx) => {
             const { f, d } = fitted(s);
             return [
-              ...axesFor(f, s, d), vLine(f, d.mx, { key: 'mx', cls: 'rule-x link-meanx' }),
-              ...s.pts.map((p, i) => {
-                const yv = p[1] * (s.yUnit === 'sec' ? 60 : 1);
-                const dev = p[0] - d.mx;
-                return {
-                  key: `sx-${i}`, tag: 'line', delay: i * 60,
-                  cls: `stick link-devx ${dev >= 0 ? 'stick-pos' : 'stick-neg'}`,
-                  attrs: { x1: f.sx(d.mx), y1: f.sy(yv), x2: f.sx(p[0]), y2: f.sy(yv) },
-                  tip: `x − x̄ = <b>${dev.toFixed(3)}</b>`,
-                };
-              }),
-              ...scatter(s, f, d, ctx),
+              ...axesFor(f, s, d),
+              vLine(f, d.mx, { key: 'mx', cls: 'rule-x link-meanx' }),
+              ...scatter(s, f, d, ctx, { opacity: 0.55 }),
+              devsX(s, f, d, { mode: 'plot', stagger: 55 }),
             ];
           },
         },
         {
-          label: 'put numbers on them',
-          note: 'Each stick has a length with a sign. <b>Hover the sticks.</b>',
+          label: 'lift them out',
+          hold: 2000,
+          note: 'Take the twelve bars off the plot and stand them on a bench, longest to shortest is not needed — just side by side. <b>Nothing has been changed, only moved.</b>',
           scene: (s, ctx) => {
-            const { f, d } = fitted(s);
-            // hang each number off the point end, then nudge any that collide
-            const anchors = s.pts.map(p => ({
-              x: f.sx(p[0]) + ((p[0] - d.mx) >= 0 ? 11 : -11),
-              y: f.sy(p[1] * (s.yUnit === 'sec' ? 60 : 1)) + 4,
-            }));
-            const ys = declutter(anchors);
+            const { f, d } = topFrame(s);
+            const devs = xdev(s);
+            const { sl, k, rank } = benchFor(devs);
             return [
-              ...axesFor(f, s, d), vLine(f, d.mx, { key: 'mx', cls: 'rule-x link-meanx' }),
-              ...s.pts.map((p, i) => {
-                const yv = p[1] * (s.yUnit === 'sec' ? 60 : 1);
-                const dev = p[0] - d.mx;
-                return [{
-                  key: `sx-${i}`, tag: 'line',
-                  cls: `stick link-devx ${dev >= 0 ? 'stick-pos' : 'stick-neg'}`,
-                  attrs: { x1: f.sx(d.mx), y1: f.sy(yv), x2: f.sx(p[0]), y2: f.sy(yv) },
-                  tip: `x − x̄ = <b>${dev.toFixed(3)}</b>`,
-                },
-                label(`sxl-${i}`, anchors[i].x, ys[i],
-                  (dev >= 0 ? '+' : '−') + Math.abs(dev).toFixed(2),
-                  { cls: `lab-sm link-devx ${dev >= 0 ? 'lab-warm' : 'lab-cold lab-end'}`, delay: i * 40 })];
+              ...axesFor(f, s, d, { grid: false, xLabel: '' }),
+              vLine(f, d.mx, { key: 'mx', cls: 'rule-x link-meanx' }),
+              ...scatter(s, f, d, ctx, { opacity: 0.4, r: 4 }),
+              ...moveBadge(1, { reused: false }),
+              ...devs.map((v, i) => devBarX(i, v, { mode: 'slot', k, sl, slot: rank[i], delay: i * 70 })),
+              ...devs.map((v, i) => label(`n-${i}`, sl.centre(rank[i]), sl.baseY(rank[i]) + 15,
+                v.toFixed(2), { cls: `lab-sm lab-mid ${v >= 0 ? 'lab-warm' : 'lab-cold'}`, delay: i * 70 })),
+              label('cap', 376, 528, 'sorted biggest first, purely so the pile is easy to read',
+                { cls: 'lab-sm lab-mid' }),
+            ];
+          },
+        },
+        {
+          label: 'they cancel',
+          hold: 2200,
+          note: 'Lay the signed bars end to end. Warm reaches right, cold reaches left, and you finish exactly where you started. <b>Σ(xᵢ − x̄) = 0, always.</b>',
+          scene: s => {
+            const devs = xdev(s);
+            // scale so the wandering chain fits the canvas, not so one bar does
+            let run = 0, lo = 0, hi = 0;
+            devs.forEach(v => { run += v; lo = Math.min(lo, run); hi = Math.max(hi, run); });
+            const k = 540 / Math.max(hi - lo, 1e-6);
+            const start = 90 - lo * k;
+            const { sl } = benchFor(devs);
+            const links = chain(devs, k, start);
+            return [
+              ...moveBadge(1, { reused: true }),
+              ...surface({ y: 300, text: '' }),
+              ...devs.map((v, i) => devBarX(i, v, {
+                mode: 'chain', k, sl, baseY: 300, chainX: links[i].at, delay: i * 150,
+              })),
+              { key: 'start', tag: 'line', cls: 'rule-faint rule-dash', attrs: { x1: start, y1: 240, x2: start, y2: 360 } },
+              { key: 'finish', tag: 'line', cls: 'rule-gold', attrs: { x1: links.at(-1).end, y1: 240, x2: links.at(-1).end, y2: 360 } },
+              label('sl', start, 226, 'start', { cls: 'lab-sm lab-mid' }),
+              label('fl', links.at(-1).end, 226, 'finish', { cls: 'lab-sm lab-mid lab-gold' }),
+              label('zero', 376, 400, 'Σ (xᵢ − x̄) = 0', { cls: 'lab-big lab-mid' }),
+              label('zero2', 376, 424, 'raw deviations cannot measure spread — they undo each other', { cls: 'lab-sm lab-mid' }),
+            ];
+          },
+        },
+        {
+          label: 'square the first one',
+          hold: 2000,
+          note: 'So square them. Watch the first bar: it keeps its width and <b>grows upward until its height matches</b>. A length has become an area, and the minus sign is gone.',
+          scene: s => {
+            const devs = xdev(s);
+            const { sl, k, rank } = benchFor(devs);
+            const first = rank.indexOf(0);   // whichever bar is longest
+            return [
+              ...moveBadge(2, { reused: false }),
+              ...devs.map((v, i) => devBarX(i, v, { mode: i === first ? 'square' : 'slot', k, sl, slot: rank[i] })),
+              label('lbl', sl.centre(0), sl.baseY(0) - Math.abs(devs[first]) * k - 14,
+                `(${devs[first].toFixed(2)})² = ${(devs[first] ** 2).toFixed(3)}`, { cls: 'lab lab-big lab-mid lab-cyan' }),
+              label('note', 376, 120, 'the side is the deviation · the area is the deviation squared', { cls: 'lab lab-mid' }),
+              label('note2', 376, 528, 'take the longest bar first, so you can watch it happen', { cls: 'lab-sm lab-mid' }),
+            ];
+          },
+        },
+        {
+          label: 'square the rest',
+          hold: 2000,
+          note: 'Every bar grows into its own square. Big deviations become <b>very</b> big squares — that is squaring doing its job of punishing distance.',
+          scene: s => {
+            const devs = xdev(s);
+            const { sl, k, rank } = benchFor(devs);
+            return [
+              ...moveBadge(2, { reused: true }),
+              ...devs.map((v, i) => devBarX(i, v, { mode: 'square', k, sl, slot: rank[i], delay: rank[i] * 90 })),
+              ...devs.map((v, i) => (Math.abs(v) * k > 30
+                ? label(`a-${i}`, sl.centre(rank[i]), sl.baseY(rank[i]) - (Math.abs(v) * k) / 2 + 4,
+                  (v * v).toFixed(2), { cls: 'lab-sm lab-mid', delay: rank[i] * 90 })
+                : null)),
+              label('cap', 376, 528, 'twelve squares · big deviations become very big squares', { cls: 'lab-sm lab-mid' }),
+            ];
+          },
+        },
+        {
+          label: 'add the areas',
+          hold: 2200,
+          note: 'Total the pile. The number counts up as each square joins it.',
+          scene: s => {
+            const devs = xdev(s);
+            const { sl, k, rank } = benchFor(devs);
+            const total = st.sum(devs.map(v => v * v));
+            return [
+              ...moveBadge(3, { reused: false }),
+              ...devs.map((v, i) => devBarX(i, v, { mode: 'square', k, sl, slot: rank[i], delay: rank[i] * 110 })),
+              numLabel('tot', 376, 130, total, {
+                cls: 'lab-big lab-mid lab-gold', d: 3, pre: 'Σ (xᵢ − x̄)² = ',
+                dur: devs.length * 110 + 400, from: 0,
               }),
-              ...scatter(s, f, d, ctx, { opacity: 0.5 }),
+              label('cap', 376, 156, 'the sum of squares — the raw material of every spread on this site',
+                { cls: 'lab-sm lab-mid' }),
             ];
           },
         },
         {
-          label: 'they cancel to zero',
-          hold: 1700,
-          note: 'Stack the signed lengths end to end and you land exactly back where you started. <b>Σ(xᵢ − x̄) = 0, always.</b> Raw deviations cannot measure spread.',
+          label: 'take the average',
+          hold: 2200,
+          note: 'Collapse the pile into <b>one square of the same average area</b>. Divide by n − 1, not n. That average area is the <b>variance</b>.',
           scene: s => {
-            const { f, d } = fitted(s);
-            const devs = d.x.map(v => v - d.mx);
-            const k = (f.x1 - f.x0) / (Math.max(...devs.map(Math.abs)) * 12);
-            let cx = f.midX - 120;
-            const baseY = f.midY;
-            const items = [];
-            devs.forEach((v, i) => {
-              const w = v * k * 3;
-              items.push({
-                key: `stack-${i}`, tag: 'line', delay: i * 110,
-                cls: `stick link-devx ${v >= 0 ? 'stick-pos' : 'stick-neg'}`,
-                attrs: { x1: cx, y1: baseY, x2: cx + w, y2: baseY },
-                tip: `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(3)}`,
-              });
-              cx += w;
-            });
-            items.push(vLine(f, d.mx, { key: 'mx', cls: 'rule-x link-meanx' }));
-            items.push({ key: 'startm', tag: 'line', cls: 'rule-faint rule-dash', attrs: { x1: f.midX - 120, y1: baseY - 40, x2: f.midX - 120, y2: baseY + 40 } });
-            items.push(label('endl', f.midX - 120, baseY + 62, 'start = finish → sum is 0', { cls: 'lab-sm lab-mid' }));
-            items.push(label('zero', f.midX, f.y1 + 10, 'Σ (xᵢ − x̄) = 0', { cls: 'lab-big lab-mid' }));
-            return [...axesFor(f, s, d, { grid: false }), ...items];
-          },
-        },
-        {
-          label: 'square them',
-          hold: 1800,
-          note: 'Each stick becomes a square with that stick as its side. A length turns into an <b>area</b>, and the minus signs disappear — a negative side still makes a positive square.',
-          scene: s => {
-            const { f, d } = fitted(s);
-            const devs = d.x.map(v => v - d.mx);
-            const maxDev = Math.max(...devs.map(Math.abs));
-            const k = 96 / maxDev;
-            const baseY = f.y0 - 40;
-            return [
-              ...axesFor(f, s, d, { grid: false, showY: false }),
-              ...squareRow(devs, { key: 'sqx', cls: 'sq sq-x link-devx', baseY, x0: f.x0, x1: f.x1, k, labelEach: true }),
-              label('sst', f.midX, baseY - 96 - 34, 'Σ (xᵢ − x̄)²  =  ' + st.sum(devs.map(v => v * v)).toFixed(3),
-                { cls: 'lab-big lab-mid lab-gold' }),
-              label('sqnote', f.midX, baseY - 96 - 14, 'twelve squares, drawn to one common scale', { cls: 'lab-sm lab-mid' }),
-            ];
-          },
-        },
-        {
-          label: 'average them',
-          hold: 1800,
-          note: 'Collapse the pile into <b>one square of the same average area</b>. That average area is the <b>variance</b>. Divide by n − 1, not n.',
-          scene: s => {
-            const { f, d } = fitted(s);
-            const devs = d.x.map(v => v - d.mx);
-            const k = 96 / Math.max(...devs.map(Math.abs));
-            const v = st.variance(d.x);
+            const devs = xdev(s);
+            const { sl, k, rank } = benchFor(devs);
+            const v = st.variance(xraw(s));
             const side = Math.sqrt(v) * k;
-            const baseY = f.y0 - 40;
             return [
-              ...axesFor(f, s, d, { grid: false, showY: false }),
-              ...squareRow(devs, {
-                key: 'sqx', cls: 'sq sq-x link-devx', baseY, x0: f.x0, x1: f.x1, k,
-                mergeTo: { x: f.midX, side },
-              }),
-              label('varl', f.midX, baseY - side - 16, `s²ₓ = ${v.toFixed(4)}`, { cls: 'lab-big lab-mid lab-cyan' }),
-              label('varl2', f.midX, baseY - side - 38, 'one square, of the average area', { cls: 'lab-sm lab-mid' }),
-              label('varl3', f.midX, baseY + 24, 'the average squared deviation — the variance', { cls: 'lab-sm lab-mid' }),
+              ...moveBadge(4, { reused: false }),
+              ...devs.map((val, i) => devBarX(i, val, {
+                mode: 'merged', k, sl, baseY: 470, mergeTo: { x: 376, side },
+                opacity: rank[i] === 0 ? 1 : 0.13, delay: rank[i] * 40,
+              })),
+              numLabel('var', 376, 470 - side - 16, v, { cls: 'lab-big lab-mid lab-cyan', d: 4, pre: 's²ₓ = ' }),
+              label('cap', 376, 470 - side - 38, 'one square, of the average area', { cls: 'lab-sm lab-mid' }),
+              label('div', 376, 130, `${st.sum(devs.map(x => x * x)).toFixed(3)} ÷ ${devs.length - 1} = ${v.toFixed(4)}`,
+                { cls: 'lab-big lab-mid lab-gold' }),
+              label('div2', 376, 156, 'total area, shared out over the free pieces of information', { cls: 'lab-sm lab-mid' }),
             ];
           },
         },
         {
           label: 'take the root',
-          note: 'Variance is in <b>minutes squared</b>, which nobody can picture. Take the square root — the <b>side</b> of that average square — and you are back in minutes. That is the standard deviation.',
+          hold: 2000,
+          note: 'Variance is in <b>minutes squared</b>, which nobody can picture. Take the square root — the <b>side</b> of that average square — and you are back in minutes.',
+          scene: s => {
+            const devs = xdev(s);
+            const { sl, k, rank } = benchFor(devs);
+            const v = st.variance(xraw(s));
+            const side = Math.sqrt(v) * k;
+            return [
+              ...devs.map((val, i) => devBarX(i, val, {
+                mode: 'merged', k, sl, baseY: 470, mergeTo: { x: 376, side }, opacity: rank[i] === 0 ? 1 : 0,
+              })),
+              { key: 'sideline', tag: 'line', cls: 'stick stick-x', attrs: { x1: 376 - side / 2, y1: 484, x2: 376 + side / 2, y2: 484 } },
+              numLabel('sd', 376, 506, Math.sqrt(v), { cls: 'lab-big lab-mid lab-cyan', d: 3, pre: 'sₓ = ', suf: ' min' }),
+              label('cap', 376, 470 - side - 16, 'area = variance', { cls: 'lab-sm lab-mid lab-muted' }),
+              label('cap2', 376, 130, 'the side of the average square is the standard deviation', { cls: 'lab-big lab-mid' }),
+            ];
+          },
+        },
+        {
+          label: 'carry it back',
+          note: 'Put that length back on the plot as a band either side of x̄. Most eruptions live inside it. <b>Drag a point and every step you just watched re-runs.</b>',
           scene: (s, ctx) => {
             const { f, d } = fitted(s);
             return [
               ...axesFor(f, s, d),
-              rect('band', f.sx(d.mx - d.sx), f.y1, f.sx(d.mx + d.sx) - f.sx(d.mx - d.sx), f.y0 - f.y1,
-                { cls: 'sq sq-x' }),
+              rect('band', f.sx(d.mx - d.sx), f.y1, f.sx(d.mx + d.sx) - f.sx(d.mx - d.sx), f.y0 - f.y1, { cls: 'sq sq-x' }),
               ...scatter(s, f, d, ctx),
               vLine(f, d.mx, { key: 'mx', cls: 'rule-x link-meanx' }),
               label('sdl', f.sx(d.mx), f.y1 - 8, `x̄ ± sₓ  =  ${d.mx.toFixed(2)} ± ${d.sx.toFixed(2)} min`,
@@ -597,64 +729,86 @@ export default {
     /* ── 7 ─────────────────────────────────────────────────────────────── */
     {
       title: 'and how spread out is y?',
-      prose: `<p>Identical machinery, rotated. Deviations from ȳ, squared, averaged, rooted.</p>
-        <p>This is worth noticing: you have now learned the <em>only</em> spread calculation in this entire site. ANOVA, regression, t-tests — they all do exactly this, and then argue about what to divide by.</p>`,
+      prose: `<p>Nothing new happens in this step, and that is the whole point of it.</p>
+        <p>The bench you just built does not care which column you feed it. Subtract, square, add up, divide — the same four moves, turned ninety degrees. Watch the apparatus stay identical while only the input changes.</p>
+        <p>This is worth noticing because it is the last time we will build a spread from scratch. ANOVA, regression, t-tests: when they compute a variance, <em>this</em> is what they are doing.</p>`,
       formula: formula(
         `${t(sup('s', '2') + sub('', 'y'), { tone: 'purple', explain: 'The sample variance of y.' })} ${eq} ` +
         frac(sumOver(paren(devY()) + sup('', '2')), nMinus1()),
-        { caption: 'same four moves: subtract, square, sum, divide' }),
+        { caption: 'same recipe, different column' }),
       readouts: [RO.my, { key: 'vy', label: 's²<sub>y</sub>', tone: 'purple', get: s => st.variance(D(s).y), d: 3 }, RO.sy],
       dep: { note: 'This is the same calculation the <b>t-test</b> uses to decide whether two group means differ.', lesson: 'ttest', label: 't-tests' },
       beats: [
         {
-          label: 'deviations in y',
-          note: 'Vertical sticks now, from each point to the <b>ȳ</b> line.',
-          scene: (s, ctx) => {
-            const { f, d } = fitted(s);
-            return [
-              ...axesFor(f, s, d), hLine(f, d.my, { key: 'my', cls: 'rule-y link-meany' }),
-              ...s.pts.map((p, i) => {
-                const yv = p[1] * (s.yUnit === 'sec' ? 60 : 1);
-                const dev = yv - d.my;
-                return {
-                  key: `sy-${i}`, tag: 'line', delay: i * 55,
-                  cls: `stick link-devy ${dev >= 0 ? 'stick-pos' : 'stick-neg'}`,
-                  attrs: { x1: f.sx(p[0]), y1: f.sy(d.my), x2: f.sx(p[0]), y2: f.sy(yv) },
-                  tip: `y − ȳ = <b>${dev.toFixed(2)}</b>`,
-                };
-              }),
-              ...scatter(s, f, d, ctx),
-            ];
-          },
-        },
-        {
-          label: 'square and pile',
-          hold: 1700,
-          note: 'Twelve squares again, then one average square.',
-          scene: s => {
-            const { f, d } = fitted(s);
-            const devs = d.y.map(v => v - d.my);
-            const k = 58 / Math.max(...devs.map(Math.abs));
-            return [
-              ...axesFor(f, s, d, { grid: false, showY: false }),
-              ...squareRow(devs, { key: 'sqy', cls: 'sq sq-y link-devy', baseY: f.y0 - 12, x0: f.x0, x1: f.x1, k }),
-              label('ssty', f.midX, f.y1 + 14, 'Σ (yᵢ − ȳ)²  =  ' + st.sum(devs.map(v => v * v)).toFixed(1),
-                { cls: 'lab-big lab-mid lab-gold' }),
-            ];
-          },
-        },
-        {
-          label: 'the spread of y',
-          note: 'The waiting times scatter by about <b>s_y</b> minutes around their mean.',
+          label: 'turn the bars ninety degrees',
+          hold: 1800,
+          note: 'The bars now run from each point to the <b>ȳ</b> line instead. That is the only difference.',
           scene: (s, ctx) => {
             const { f, d } = fitted(s);
             return [
               ...axesFor(f, s, d),
-              rect('bandy', f.x0, f.sy(d.my + d.sy), f.x1 - f.x0, f.sy(d.my - d.sy) - f.sy(d.my + d.sy), { cls: 'sq sq-y' }),
-              ...scatter(s, f, d, ctx),
               hLine(f, d.my, { key: 'my', cls: 'rule-y link-meany' }),
-              label('sdly', f.x1 - 6, f.sy(d.my + d.sy) - 8, `ȳ ± s_y = ${d.my.toFixed(1)} ± ${d.sy.toFixed(1)}`,
-                { cls: 'lab lab-purple lab-end' }),
+              ...scatter(s, f, d, ctx, { opacity: 0.55 }),
+              devsY(s, f, d, { mode: 'plot', stagger: 55 }),
+              ...moveBadge(1, { reused: true }),
+            ];
+          },
+        },
+        {
+          label: 'the same bench',
+          hold: 1900,
+          note: 'Lifted out and stood side by side — <b>the identical bench</b>. If you did not know which column these came from, you could not tell.',
+          scene: (s, ctx) => {
+            const { f, d } = topFrame(s);
+            const devs = ydev(s);
+            const { sl, k, rank } = benchFor(devs);
+            return [
+              ...axesFor(f, s, d, { grid: false, xLabel: '' }),
+              hLine(f, d.my, { key: 'my', cls: 'rule-y link-meany' }),
+              ...scatter(s, f, d, ctx, { opacity: 0.4, r: 4 }),
+              ...moveBadge(1, { reused: true }),
+              ...devs.map((v, i) => devBarY(i, v, { mode: 'slot', k, sl, slot: rank[i], delay: i * 70 })),
+              ...devs.map((v, i) => label(`n-${i}`, sl.centre(rank[i]), sl.baseY(rank[i]) + 15,
+                v.toFixed(1), { cls: `lab-sm lab-mid ${v >= 0 ? 'lab-warm' : 'lab-cold'}`, delay: i * 70 })),
+              label('cap', 376, 528, 'the identical bench, fed the other column', { cls: 'lab-sm lab-mid' }),
+            ];
+          },
+        },
+        {
+          label: 'square, add, divide',
+          hold: 2100,
+          note: 'All three remaining moves at once, because you have already watched each of them once. <b>Reuse is the reward for paying attention the first time.</b>',
+          scene: s => {
+            const devs = ydev(s);
+            const { sl, k, rank } = benchFor(devs);
+            const total = st.sum(devs.map(v => v * v));
+            return [
+              ...moveBadge(2, { reused: true }),
+              ...devs.map((v, i) => devBarY(i, v, { mode: 'square', k, sl, slot: rank[i], delay: rank[i] * 80 })),
+              numLabel('tot', 376, 130, total, {
+                cls: 'lab-big lab-mid lab-gold', d: 1, pre: 'Σ (yᵢ − ȳ)² = ', dur: 1300, from: 0,
+              }),
+              label('cap', 376, 156, 'then ÷ 11, then square-rooted — exactly as before', { cls: 'lab-sm lab-mid' }),
+            ];
+          },
+        },
+        {
+          label: 'the two benches together',
+          hold: 2000,
+          note: 'Left: the spread of eruption lengths. Right: the spread of waiting times. <b>Same apparatus, two different columns.</b> They are not comparable yet — one is in minutes of eruption, the other in minutes of waiting — and fixing that is what the next few steps are about.',
+          scene: s => {
+            const dx = xdev(s), dy = ydev(s);
+            const bx = benchFor(dx, { x0: 56, x1: 348, rows: 2, rowY: [300, 440] });
+            const by = benchFor(dy, { x0: 388, x1: 684, rows: 2, rowY: [300, 440] });
+            return [
+              label('t1', 202, 110, 'x — eruption length', { cls: 'lab-big lab-mid lab-cyan' }),
+              label('t2', 536, 110, 'y — waiting time', { cls: 'lab-big lab-mid lab-purple' }),
+              ...dx.map((v, i) => devBarX(i, v, { mode: 'square', k: bx.k, sl: bx.sl, slot: bx.rank[i], delay: i * 45 })),
+              ...dy.map((v, i) => devBarY(i, v, { mode: 'square', k: by.k, sl: by.sl, slot: by.rank[i], delay: i * 45 })),
+              label('s1', 202, 476, `sₓ = ${D(s).sx.toFixed(3)} min`, { cls: 'lab lab-mid lab-cyan' }),
+              label('s2', 536, 476, `s_y = ${D(s).sy.toFixed(2)} min`, { cls: 'lab lab-mid lab-purple' }),
+              { key: 'divider', tag: 'line', cls: 'rule-faint', attrs: { x1: 368, y1: 100, x2: 368, y2: 480 } },
+              label('note', 376, 512, 'identical machine · different input · different units', { cls: 'lab lab-mid' }),
             ];
           },
         },
@@ -664,9 +818,10 @@ export default {
     /* ── 8 ─────────────────────────────────────────────────────────────── */
     {
       title: 'multiply the two deviations together',
-      prose: `<p>Now the actual idea. For each point, take its x-deviation and its y-deviation and <strong>multiply them</strong>.</p>
-        <p>Watch the signs do the work. Above average on both → positive times positive → <span class="cs-datum-warm">positive</span>. Below average on both → negative times negative → <span class="cs-datum-warm">still positive</span>. But one up and one down → <span class="cs-datum-cold">negative</span>.</p>
-        <p>So the product asks each point a yes-or-no question: <em>do you agree that these two things move together?</em> Add up the answers, divide by n − 1, and you have the <strong>covariance</strong>.</p>`,
+      prose: `<p>Now the actual idea, and it uses both benches at once.</p>
+        <p>Each point has an x-bar and a y-bar sitting on the bench. Stand them at right angles and they close into a <strong>rectangle</strong>. The area of that rectangle is the product of the two deviations.</p>
+        <p>Watch the signs do the work. Above average on both → positive times positive → <span class="cs-datum-warm">positive</span>. Below average on both → negative times negative → <span class="cs-datum-warm">still positive</span>. One up and one down → <span class="cs-datum-cold">negative</span>.</p>
+        <p>So each point casts a vote on one question: <em>do these two things move together?</em> Add up the votes, divide by n − 1, and you have the <strong>covariance</strong>.</p>`,
       formula: formula(
         `${t('cov(x, y)', { explain: 'Covariance: the average product of the two deviations.', tone: 'gold' })} ${eq} ` +
         frac(sumOver(paren(devX()) + times + paren(devY())), nMinus1()),
@@ -677,36 +832,100 @@ export default {
       ],
       beats: [
         {
-          label: 'one point, one rectangle',
-          note: 'Take the first eruption. Its x-deviation is the width, its y-deviation is the height. The <b>area of that rectangle is the product</b>.',
-          scene: (s, ctx) => {
-            const { f, d } = fitted(s);
-            const p = s.pts[0], yv = p[1] * (s.yUnit === 'sec' ? 60 : 1);
-            const dx = p[0] - d.mx, dy = yv - d.my;
+          label: 'one point, two bars',
+          hold: 1800,
+          note: 'Point #1 already has both of its deviations measured. They are sitting on the bench from the last two steps.',
+          scene: s => {
+            const dx = xdev(s), dy = ydev(s);
+            const k = 150 / Math.max(...dx.map(Math.abs));
+            const ky = 150 / Math.max(...dy.map(Math.abs));
             return [
-              ...axesFor(f, s, d),
-              rect('r0', f.sx(d.mx), f.sy(d.my), f.sx(p[0]) - f.sx(d.mx), f.sy(yv) - f.sy(d.my),
-                { cls: `sq ${dx * dy >= 0 ? 'sq-pos' : 'sq-neg'}` }),
-              vLine(f, d.mx, { key: 'mx', cls: 'rule-x link-meanx' }),
-              hLine(f, d.my, { key: 'my', cls: 'rule-y link-meany' }),
-              ...scatter(s, f, d, ctx, { opacity: 0.4 }),
-              { key: 'p0', tag: 'circle', cls: 'pt', attrs: { cx: f.sx(p[0]), cy: f.sy(yv), r: 7 } },
-              label('w', (f.sx(d.mx) + f.sx(p[0])) / 2, f.sy(d.my) + 16, `width = ${dx.toFixed(2)}`, { cls: 'lab-sm lab-mid lab-cyan' }),
-              label('hgt', f.sx(p[0]) + 8, (f.sy(d.my) + f.sy(yv)) / 2, `height = ${dy.toFixed(1)}`, { cls: 'lab-sm lab-purple' }),
-              label('prod', f.midX, f.y1 + 12, `product = ${(dx * dy).toFixed(2)}`, { cls: 'lab-big lab-mid lab-warm' }),
+              label('t', 376, 110, 'the two deviations of eruption #1', { cls: 'lab-big lab-mid' }),
+              rect('bx', 250, 300, Math.abs(dx[0]) * k, 5, { cls: `sq ${dx[0] >= 0 ? 'sq-pos' : 'sq-neg'}` }),
+              label('lx', 250, 288, `x − x̄ = ${dx[0].toFixed(2)}`, { cls: 'lab lab-cyan' }),
+              rect('by', 250, 340, Math.abs(dy[0]) * ky, 5, { cls: `sq ${dy[0] >= 0 ? 'sq-pos' : 'sq-neg'}` }),
+              label('ly', 250, 372, `y − ȳ = ${dy[0].toFixed(2)}`, { cls: 'lab lab-purple' }),
+              label('n', 376, 430, 'two lengths, lying flat', { cls: 'lab-sm lab-mid' }),
             ];
           },
         },
         {
+          label: 'stand one of them up',
+          hold: 1800,
+          note: 'Rotate the y-bar ninety degrees so the two meet at a corner. Nothing about either length has changed.',
+          scene: s => {
+            const dx = xdev(s), dy = ydev(s);
+            const k = 150 / Math.max(...dx.map(Math.abs));
+            const ky = 150 / Math.max(...dy.map(Math.abs));
+            const w = Math.abs(dx[0]) * k, h = Math.abs(dy[0]) * ky;
+            return [
+              label('t', 376, 110, 'stand the second one up', { cls: 'lab-big lab-mid' }),
+              rect('bx', 250, 400, w, 5, { cls: `sq ${dx[0] >= 0 ? 'sq-pos' : 'sq-neg'}` }),
+              label('lx', 250 + w / 2, 424, `${dx[0].toFixed(2)}`, { cls: 'lab lab-mid lab-cyan' }),
+              rect('by', 250, 400 - h, 5, h, { cls: `sq ${dy[0] >= 0 ? 'sq-pos' : 'sq-neg'}` }),
+              label('ly', 236, 400 - h / 2, `${dy[0].toFixed(2)}`, { cls: 'lab lab-end lab-purple' }),
+              label('n', 376, 190, 'a corner — one length across, one length up', { cls: 'lab lab-mid' }),
+            ];
+          },
+        },
+        {
+          label: 'close the rectangle',
+          hold: 2000,
+          note: 'Fill in the corner. <b>The area is the product.</b> Same trick as squaring, except the two sides come from different columns.',
+          scene: s => {
+            const dx = xdev(s), dy = ydev(s);
+            const k = 150 / Math.max(...dx.map(Math.abs));
+            const ky = 150 / Math.max(...dy.map(Math.abs));
+            const w = Math.abs(dx[0]) * k, h = Math.abs(dy[0]) * ky;
+            const prod = dx[0] * dy[0];
+            return [
+              label('t', 376, 110, 'width × height = the product', { cls: 'lab-big lab-mid' }),
+              rect('fill', 250, 400 - h, w, h, { cls: `sq ${prod >= 0 ? 'sq-pos' : 'sq-neg'}`, dur: 700 }),
+              rect('bx', 250, 400, w, 5, { cls: `sq ${dx[0] >= 0 ? 'sq-pos' : 'sq-neg'}` }),
+              rect('by', 250, 400 - h, 5, h, { cls: `sq ${dy[0] >= 0 ? 'sq-pos' : 'sq-neg'}` }),
+              label('lx', 250 + w / 2, 424, `${dx[0].toFixed(2)}`, { cls: 'lab lab-mid lab-cyan' }),
+              label('ly', 236, 400 - h / 2, `${dy[0].toFixed(2)}`, { cls: 'lab lab-end lab-purple' }),
+              label('p', 250 + w + 20, 400 - h / 2,
+                `${dx[0].toFixed(2)} × ${dy[0].toFixed(2)} = ${prod.toFixed(2)}`, { cls: 'lab-big lab-warm' }),
+            ];
+          },
+        },
+        {
+          label: 'the sign rule',
+          hold: 2200,
+          note: 'Four possibilities, and only the diagonal pairs agree. <b>Agreeing points make warm rectangles; disagreeing points make cold ones.</b>',
+          scene: () => {
+            const cases = [
+              ['above x̄, above ȳ', 1, 1], ['below x̄, below ȳ', -1, -1],
+              ['above x̄, below ȳ', 1, -1], ['below x̄, above ȳ', -1, 1],
+            ];
+            const items = [label('t', 376, 100, 'what the two signs do', { cls: 'lab-big lab-mid' })];
+            cases.forEach(([name, sx_, sy_], i) => {
+              const cx = 150 + (i % 2) * 300, cy = 200 + Math.floor(i / 2) * 160;
+              const pos = sx_ * sy_ > 0;
+              items.push(rect(`r-${i}`, cx - 45, cy - 34, 90, 68, {
+                cls: `sq ${pos ? 'sq-pos' : 'sq-neg'}`, delay: i * 200,
+              }));
+              items.push(label(`n-${i}`, cx, cy + 56, name, { cls: 'lab-sm lab-mid', delay: i * 200 }));
+              items.push(label(`s-${i}`, cx, cy + 4,
+                `${sx_ > 0 ? '+' : '−'} × ${sy_ > 0 ? '+' : '−'} = ${pos ? '+' : '−'}`,
+                { cls: `lab-big lab-mid ${pos ? 'lab-warm' : 'lab-cold'}`, delay: i * 200 }));
+            });
+            items.push(label('cap', 376, 500, 'the product is the question "do you agree?", answered numerically',
+              { cls: 'lab lab-mid' }));
+            return items;
+          },
+        },
+        {
           label: 'all twelve rectangles',
-          hold: 1600,
-          note: 'Warm rectangles are points that <b>agree</b> with the trend. Cold rectangles <b>disagree</b>. Hover any of them.',
+          hold: 2000,
+          note: 'One rectangle per point, drawn from the crossing of the two mean lines. Hover any of them.',
           scene: (s, ctx) => {
             const { f, d } = fitted(s);
             return [
               ...axesFor(f, s, d),
               ...s.pts.map((p, i) => {
-                const yv = p[1] * (s.yUnit === 'sec' ? 60 : 1);
+                const yv = yOf(s, i);
                 const dx = p[0] - d.mx, dy = yv - d.my;
                 return rect(`rc-${i}`, f.sx(d.mx), f.sy(d.my), f.sx(p[0]) - f.sx(d.mx), f.sy(yv) - f.sy(d.my), {
                   cls: `sq link-prod ${dx * dy >= 0 ? 'sq-pos' : 'sq-neg'}`, delay: i * 80, opacity: 0.75,
@@ -721,31 +940,31 @@ export default {
         },
         {
           label: 'count the votes',
-          hold: 1800,
-          note: 'Lay the signed areas end to end: warm to the right, cold to the left. Where you finish is the <b>sum of products</b>.',
+          hold: 2400,
+          note: 'Lay the signed areas end to end, exactly as we did with the raw deviations. This time they do <b>not</b> cancel — and where you finish is the sum of products.',
           scene: s => {
-            const { f, d } = fitted(s);
+            const d = D(s);
             const prods = d.x.map((v, i) => (v - d.mx) * (d.y[i] - d.my));
             const total = st.sum(prods);
-            const k = (f.x1 - f.x0 - 90) / Math.max(Math.abs(total), ...prods.map(Math.abs)) / 1.35;
-            let cx = f.x0 + 30;
-            const baseY = f.midY + 30;
-            const items = [];
-            prods.forEach((v, i) => {
-              const w = v * k;
-              items.push(rect(`led-${i}`, Math.min(cx, cx + w), baseY - 15, Math.abs(w), 30, {
-                cls: `sq link-prod ${v >= 0 ? 'sq-pos' : 'sq-neg'}`, delay: i * 130,
-                tip: `#${i + 1}: <b>${v.toFixed(2)}</b>`,
-              }));
-              cx += w;
-            });
-            items.push({ key: 'startl', tag: 'line', cls: 'rule-faint rule-dash', attrs: { x1: f.x0 + 30, y1: baseY - 46, x2: f.x0 + 30, y2: baseY + 46 } });
-            items.push({ key: 'endl', tag: 'line', cls: 'rule-gold', attrs: { x1: cx, y1: baseY - 46, x2: cx, y2: baseY + 46 } });
-            items.push(label('tot', cx, baseY + 66, `Σ = ${total.toFixed(2)}`, { cls: 'lab-big lab-mid lab-gold' }));
-            items.push(label('lz', f.x0 + 30, baseY - 58, 'zero', { cls: 'lab-sm lab-mid' }));
-            items.push(label('cap', f.midX, baseY - 100, 'sum of products of deviations', { cls: 'lab-big lab-mid' }));
-            items.push(label('cap2', f.midX, baseY - 78, 'warm reaches right, cold reaches left', { cls: 'lab-sm lab-mid' }));
-            return items;
+            const k = 380 / Math.max(Math.abs(total), ...prods.map(Math.abs));
+            const start = 150;
+            const links = chain(prods, k, start);
+            return [
+              ...moveBadge(3, { reused: true }),
+              ...surface({ y: 300, text: '' }),
+              ...prods.map((v, i) => ({
+                key: `led-${i}`, tag: 'rect', cls: `sq link-prod ${v >= 0 ? 'sq-pos' : 'sq-neg'}`,
+                attrs: { x: Math.min(links[i].at, links[i].end), y: 300 - 16, width: Math.abs(v * k), height: 32 },
+                delay: i * 150, tip: `#${i + 1}: <b>${v.toFixed(2)}</b>`,
+                enter: { attrs: { width: 0, height: 32 } },
+              })),
+              { key: 'z', tag: 'line', cls: 'rule-faint rule-dash', attrs: { x1: start, y1: 244, x2: start, y2: 356 } },
+              { key: 'e', tag: 'line', cls: 'rule-gold', attrs: { x1: links.at(-1).end, y1: 244, x2: links.at(-1).end, y2: 356 } },
+              label('zl', start, 230, 'zero', { cls: 'lab-sm lab-mid' }),
+              numLabel('tot', links.at(-1).end, 380, total, { cls: 'lab-big lab-mid lab-gold', d: 2, pre: 'Σ = ' }),
+              label('cap', 376, 150, 'sum of the products of the deviations', { cls: 'lab-big lab-mid' }),
+              label('cap2', 376, 172, 'warm reaches right, cold reaches left', { cls: 'lab-sm lab-mid' }),
+            ];
           },
         },
         {
@@ -756,7 +975,7 @@ export default {
             return [
               ...axesFor(f, s, d),
               ...s.pts.map((p, i) => {
-                const yv = p[1] * (s.yUnit === 'sec' ? 60 : 1);
+                const yv = yOf(s, i);
                 const dx = p[0] - d.mx, dy = yv - d.my;
                 return rect(`rc-${i}`, f.sx(d.mx), f.sy(d.my), f.sx(p[0]) - f.sx(d.mx), f.sy(yv) - f.sy(d.my), {
                   cls: `sq link-prod ${dx * dy >= 0 ? 'sq-pos' : 'sq-neg'}`, opacity: 0.35,
@@ -765,6 +984,7 @@ export default {
               vLine(f, d.mx, { key: 'mx', cls: 'rule-x link-meanx' }),
               hLine(f, d.my, { key: 'my', cls: 'rule-y link-meany' }),
               ...scatter(s, f, d, ctx),
+              ...moveBadge(4, { reused: true }),
               numLabel('covl', f.midX, f.y1 + 12, d.cov, {
                 cls: 'lab-big lab-mid lab-gold', d: 2, pre: 'cov = ',
                 suf: s.yUnit === 'sec' ? ' min·sec' : ' min·min',
