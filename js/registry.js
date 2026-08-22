@@ -72,7 +72,7 @@ export const LESSONS = [
     load: () => import('./lessons/splines.js'),
   },
   {
-    id: 'clt', title: 'normal distributions & the clt', kicker: 'WHY BELLS APPEAR',
+    id: 'clt', title: 'normal distributions & the clt', short: 'normal & the clt', kicker: 'WHY BELLS APPEAR',
     group: 'core', status: 'live', deps: [],
     blurb: 'The central limit theorem is not a claim about your data. It is a claim about averages — and it is stranger than it sounds.',
     load: () => import('./lessons/clt.js'),

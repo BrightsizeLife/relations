@@ -74,9 +74,10 @@ export function renderMap(root, onNav) {
       fill: 'var(--cs-bg-card)', stroke: l.status === 'live' ? accent : 'var(--cs-border-data)',
       'stroke-width': 1.2, 'stroke-dasharray': l.status === 'live' ? '' : '4 3',
     }));
+    const shown = l.short || (l.title.length > 22 ? l.title.slice(0, 21) + '…' : l.title);
     g.appendChild(S('text', {
       x: p.x + 11, y: p.y + 18, style: { fontSize: '11px', fill: 'var(--cs-text-bright)' },
-    }, document.createTextNode(l.title)));
+    }, document.createTextNode(shown)));
     g.appendChild(S('text', {
       x: p.x + 11, y: p.y + 32,
       style: { fontSize: '8px', fill: 'var(--cs-muted)', letterSpacing: '.1em' },

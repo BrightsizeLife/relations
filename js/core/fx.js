@@ -58,9 +58,15 @@ export const plus = op('+');
 export const times = op('·');
 export const approx = op('≈');
 
-/** wrap a complete display formula */
+/**
+ * Wrap a complete display formula. Each `<br>`-separated chunk becomes its own
+ * centred row, because a <br> inside a flex container does nothing.
+ */
 export function formula(html, { caption, size = 'md', id } = {}) {
-  return `<div class="cs-fx cs-fx-${size}"${id ? ` data-fx="${id}"` : ''}>${html}` +
+  const rows = String(html).split(/<br\s*\/?>/i)
+    .map(r => r.trim()).filter(Boolean)
+    .map(r => `<div class="cs-fx-row">${r}</div>`).join('');
+  return `<div class="cs-fx cs-fx-${size}"${id ? ` data-fx="${id}"` : ''}>${rows}` +
     (caption ? `<div class="cs-fx-cap">${caption}</div>` : '') + '</div>';
 }
 

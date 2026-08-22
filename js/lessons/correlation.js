@@ -84,7 +84,7 @@ function scatter(s, f, d, ctx, { cls = 'pt pt-drag', opacity = 1, stagger = 0, d
 
 const axesFor = (f, s, d, o = {}) => axes(f, {
   xLabel: `${XLAB[s.dataset]} — minutes`,
-  yLabel: `wait until the next one — ${d.unit}`,
+  yLabel: `wait to next — ${d.unit}`,
   ...o,
 });
 
@@ -473,9 +473,11 @@ export default {
                   attrs: { x1: f.sx(d.mx), y1: f.sy(yv), x2: f.sx(p[0]), y2: f.sy(yv) },
                   tip: `x − x̄ = <b>${dev.toFixed(3)}</b>`,
                 },
-                label(`sxl-${i}`, (f.sx(d.mx) + f.sx(p[0])) / 2, f.sy(yv) - 7,
+                // hang the number off the point end, so points at similar
+                // heights don't stack their labels on top of each other
+                label(`sxl-${i}`, f.sx(p[0]) + (dev >= 0 ? 11 : -11), f.sy(yv) + 4,
                   (dev >= 0 ? '+' : '−') + Math.abs(dev).toFixed(2),
-                  { cls: `lab-sm lab-mid link-devx ${dev >= 0 ? 'lab-warm' : 'lab-cold'}`, delay: i * 40 })];
+                  { cls: `lab-sm link-devx ${dev >= 0 ? 'lab-warm' : 'lab-cold'}${dev >= 0 ? '' : ' lab-end'}`, delay: i * 40 })];
               }),
               ...scatter(s, f, d, ctx, { opacity: 0.5 }),
             ];
@@ -516,13 +518,15 @@ export default {
           scene: s => {
             const { f, d } = fitted(s);
             const devs = d.x.map(v => v - d.mx);
-            const k = 58 / Math.max(...devs.map(Math.abs));
+            const maxDev = Math.max(...devs.map(Math.abs));
+            const k = 96 / maxDev;
+            const baseY = f.y0 - 40;
             return [
               ...axesFor(f, s, d, { grid: false, showY: false }),
-              ...squareRow(devs, { key: 'sqx', cls: 'sq sq-x link-devx', baseY: f.y0 - 12, x0: f.x0, x1: f.x1, k, labelEach: true }),
-              label('sst', f.midX, f.y1 + 14, 'Σ (xᵢ − x̄)²  =  ' + st.sum(devs.map(v => v * v)).toFixed(3),
+              ...squareRow(devs, { key: 'sqx', cls: 'sq sq-x link-devx', baseY, x0: f.x0, x1: f.x1, k, labelEach: true }),
+              label('sst', f.midX, baseY - 96 - 34, 'Σ (xᵢ − x̄)²  =  ' + st.sum(devs.map(v => v * v)).toFixed(3),
                 { cls: 'lab-big lab-mid lab-gold' }),
-              label('sqnote', f.midX, f.y1 + 34, 'twelve squares, drawn to one common scale', { cls: 'lab-sm lab-mid' }),
+              label('sqnote', f.midX, baseY - 96 - 14, 'twelve squares, drawn to one common scale', { cls: 'lab-sm lab-mid' }),
             ];
           },
         },
@@ -533,17 +537,19 @@ export default {
           scene: s => {
             const { f, d } = fitted(s);
             const devs = d.x.map(v => v - d.mx);
-            const k = 58 / Math.max(...devs.map(Math.abs));
+            const k = 96 / Math.max(...devs.map(Math.abs));
             const v = st.variance(d.x);
             const side = Math.sqrt(v) * k;
+            const baseY = f.y0 - 40;
             return [
               ...axesFor(f, s, d, { grid: false, showY: false }),
               ...squareRow(devs, {
-                key: 'sqx', cls: 'sq sq-x link-devx', baseY: f.y0 - 12, x0: f.x0, x1: f.x1, k,
+                key: 'sqx', cls: 'sq sq-x link-devx', baseY, x0: f.x0, x1: f.x1, k,
                 mergeTo: { x: f.midX, side },
               }),
-              label('varl', f.midX, f.y0 - 24 - side, `s²ₓ = ${v.toFixed(4)}`, { cls: 'lab-big lab-mid lab-cyan' }),
-              label('varl2', f.midX, f.y1 + 14, 'the average squared deviation', { cls: 'lab-sm lab-mid' }),
+              label('varl', f.midX, baseY - side - 16, `s²ₓ = ${v.toFixed(4)}`, { cls: 'lab-big lab-mid lab-cyan' }),
+              label('varl2', f.midX, baseY - side - 38, 'one square, of the average area', { cls: 'lab-sm lab-mid' }),
+              label('varl3', f.midX, baseY + 24, 'the average squared deviation — the variance', { cls: 'lab-sm lab-mid' }),
             ];
           },
         },
@@ -701,7 +707,7 @@ export default {
             const total = st.sum(prods);
             const k = (f.x1 - f.x0 - 90) / Math.max(Math.abs(total), ...prods.map(Math.abs)) / 1.35;
             let cx = f.x0 + 30;
-            const baseY = f.midY;
+            const baseY = f.midY + 30;
             const items = [];
             prods.forEach((v, i) => {
               const w = v * k;
@@ -715,7 +721,8 @@ export default {
             items.push({ key: 'endl', tag: 'line', cls: 'rule-gold', attrs: { x1: cx, y1: baseY - 46, x2: cx, y2: baseY + 46 } });
             items.push(label('tot', cx, baseY + 66, `Σ = ${total.toFixed(2)}`, { cls: 'lab-big lab-mid lab-gold' }));
             items.push(label('lz', f.x0 + 30, baseY - 58, 'zero', { cls: 'lab-sm lab-mid' }));
-            items.push(label('cap', f.midX, f.y1 + 8, 'sum of products of deviations', { cls: 'lab-sm lab-mid' }));
+            items.push(label('cap', f.midX, baseY - 100, 'sum of products of deviations', { cls: 'lab-big lab-mid' }));
+            items.push(label('cap2', f.midX, baseY - 78, 'warm reaches right, cold reaches left', { cls: 'lab-sm lab-mid' }));
             return items;
           },
         },
