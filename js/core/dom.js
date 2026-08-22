@@ -32,11 +32,24 @@ function applyProps(el, attrs, isSvg) {
     if (k === 'class') el.setAttribute('class', v);
     else if (k === 'html') el.innerHTML = v;
     else if (k === 'text') el.textContent = v;
-    else if (k === 'style' && typeof v === 'object') Object.assign(el.style, v);
+    else if (k === 'style' && typeof v === 'object') setStyle(el, v);
     else if (k === 'on') for (const [ev, fn] of Object.entries(v)) el.addEventListener(ev, fn);
     else if (k.startsWith('on') && typeof v === 'function') el.addEventListener(k.slice(2).toLowerCase(), v);
     else if (!isSvg && (k === 'value' || k === 'checked' || k === 'disabled')) el[k] = v;
     else el.setAttribute(k, v);
+  }
+}
+
+/**
+ * Custom properties are invisible to Object.assign(el.style, …) — the assignment
+ * silently does nothing — so they have to go through setProperty. This was
+ * quietly collapsing every --accent override to its default.
+ */
+export function setStyle(el, obj) {
+  for (const [k, v] of Object.entries(obj)) {
+    if (v == null) continue;
+    if (k.startsWith('--')) el.style.setProperty(k, String(v));
+    else el.style[k] = v;
   }
 }
 
@@ -198,7 +211,7 @@ export function makeScene(parent) {
         if (item.set) for (const [k, v] of Object.entries(item.set)) {
           if (v == null) rec.el.removeAttribute(k); else rec.el.setAttribute(k, v);
         }
-        if (item.style) Object.assign(rec.el.style, item.style);
+        if (item.style) setStyle(rec.el, item.style);
         if (item.tip != null) rec.el.setAttribute('data-tip', item.tip); else rec.el.removeAttribute('data-tip');
         if (item.on) for (const [ev, fn] of Object.entries(item.on)) {
           const key = '__on' + ev;

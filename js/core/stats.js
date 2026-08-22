@@ -762,3 +762,122 @@ export function rhat(chains) {
   const varPlus = ((n - 1) / n) * W + B / n;
   return Math.sqrt(varPlus / W);
 }
+
+/* ── rank-based tests ─────────────────────────────────────────────────────── */
+
+/** the simplest test there is: how many differences went up? */
+export function signTest(d) {
+  const nz = d.filter(v => v !== 0);
+  const pos = nz.filter(v => v > 0).length;
+  const n = nz.length;
+  // exact two-sided binomial p under H0: p = 1/2
+  let p = 0;
+  for (let k = 0; k <= n; k++) {
+    const pk = binomPmf(k, n, 0.5);
+    if (pk <= binomPmf(pos, n, 0.5) + 1e-12) p += pk;
+  }
+  return { n, pos, neg: n - pos, ties: d.length - n, p: Math.min(1, p) };
+}
+
+/** Wilcoxon signed-rank: rank the sizes of the differences, then use the signs */
+export function wilcoxonSigned(d) {
+  const nz = d.filter(v => v !== 0);
+  const n = nz.length;
+  const r = ranks(nz.map(Math.abs));
+  const Vpos = sum(nz.map((v, i) => (v > 0 ? r[i] : 0)));
+  const Vneg = sum(nz.map((v, i) => (v < 0 ? r[i] : 0)));
+  const mu = (n * (n + 1)) / 4;
+  const sigma = Math.sqrt((n * (n + 1) * (2 * n + 1)) / 24);
+  const z = sigma > 0 ? (Vpos - mu) / sigma : 0;
+  return { n, V: Vpos, Vneg, ranks: r, mu, sigma, z, p: 2 * (1 - normCdf(Math.abs(z))) };
+}
+
+/**
+ * Mann–Whitney U. U counts, over every pair of one value from each group,
+ * how often the first beats the second — which is why U/(n₁n₂) is directly
+ * readable as "the probability a randomly chosen a beats a randomly chosen b".
+ */
+export function mannWhitney(a, b) {
+  const na = a.length, nb = b.length;
+  let U = 0, winsA = 0, ties = 0;
+  for (const va of a) for (const vb of b) {
+    if (va > vb) { U += 1; winsA++; } else if (va === vb) { U += 0.5; ties++; }
+  }
+  const mu = (na * nb) / 2;
+  const all = [...a, ...b];
+  const r = ranks(all);
+  // tie correction on the variance
+  const counts = {};
+  all.forEach(v => { counts[v] = (counts[v] || 0) + 1; });
+  const tieTerm = Object.values(counts).reduce((s, t) => s + (t ** 3 - t), 0);
+  const N = na + nb;
+  const sigma = Math.sqrt((na * nb / 12) * ((N + 1) - tieTerm / (N * (N - 1))));
+  const z = sigma > 0 ? (U - mu) / sigma : 0;
+  return {
+    U, na, nb, mu, sigma, z, ties, winsA,
+    p: 2 * (1 - normCdf(Math.abs(z))),
+    /** common-language effect size */
+    pSuperior: U / (na * nb),
+    rankSumA: sum(r.slice(0, na)),
+  };
+}
+
+/** Kruskal–Wallis: one-way ANOVA run on ranks */
+export function kruskal(groups) {
+  const all = groups.flat();
+  const N = all.length;
+  const r = ranks(all);
+  let at = 0;
+  const rankSums = groups.map(g => { const s = sum(r.slice(at, at + g.length)); at += g.length; return s; });
+  const H = (12 / (N * (N + 1))) * sum(rankSums.map((R, i) => (R * R) / groups[i].length)) - 3 * (N + 1);
+  const df = groups.length - 1;
+  return { H, df, N, rankSums, meanRanks: rankSums.map((R, i) => R / groups[i].length), p: chi2P(H, df) };
+}
+
+/* ── resampling ───────────────────────────────────────────────────────────── */
+
+/**
+ * Permutation test. If the label carries no information, then any reshuffling
+ * of the labels is as likely as the one you saw — so shuffle a few thousand
+ * times and see where the real result lands.
+ */
+export function permutationTest(a, b, { iters = 2000, seed = 5, stat } = {}) {
+  const f = stat || ((x, y) => mean(x) - mean(y));
+  const obs = f(a, b);
+  const pool = [...a, ...b];
+  const na = a.length;
+  const r = rng(seed);
+  const dist = [];
+  for (let it = 0; it < iters; it++) {
+    const p = [...pool];
+    for (let i = p.length - 1; i > 0; i--) {
+      const j = Math.floor(r() * (i + 1));
+      [p[i], p[j]] = [p[j], p[i]];
+    }
+    dist.push(f(p.slice(0, na), p.slice(na)));
+  }
+  const extreme = dist.filter(v => Math.abs(v) >= Math.abs(obs) - 1e-12).length;
+  return { obs, dist, iters, p: (extreme + 1) / (iters + 1) };
+}
+
+/**
+ * The bootstrap. Treat your sample as a stand-in for the population, draw new
+ * samples from it with replacement, and look at how much the statistic moves.
+ */
+export function bootstrap(data, statFn, { iters = 2000, seed = 9 } = {}) {
+  const r = rng(seed);
+  const n = data.length;
+  const dist = [];
+  for (let it = 0; it < iters; it++) {
+    const s = new Array(n);
+    for (let i = 0; i < n; i++) s[i] = data[Math.floor(r() * n)];
+    dist.push(statFn(s));
+  }
+  const obs = statFn(data);
+  return {
+    obs, dist, iters,
+    se: sd(dist),
+    ci: [quantile(dist, 0.025), quantile(dist, 0.975)],
+    bias: mean(dist) - obs,
+  };
+}

@@ -6,176 +6,260 @@
 
 export const LESSONS = [
   {
-    id: 'correlation', title: 'correlation', kicker: 'PEARSON r',
-    group: 'core', status: 'live', deps: [],
-    blurb: 'Two columns in, one number out. Means, deviations, squares and a sum of products — the four moves everything else reuses.',
-    load: () => import('./lessons/correlation.js'),
-  },
-  {
-    id: 'settheory', title: 'set theory & probability', short: 'set theory', kicker: 'FOUNDATION',
-    group: 'foundations', status: 'live', deps: [],
-    blurb: 'A hundred outcomes you can count. Probability is measuring a subset; conditioning is shrinking the universe and counting again.',
-    load: () => import('./lessons/settheory.js'),
-  },
-  {
-    id: 'entropy', title: 'entropy & information', short: 'entropy', kicker: 'BITS',
-    group: 'foundations', status: 'live', deps: ['settheory'],
-    blurb: 'Surprise, averaged. The splitting rule in a tree, the loss in a classifier, and the deviance in every GLM here are all this one quantity.',
-    load: () => import('./lessons/entropy.js'),
-  },
-  {
-    id: 'mutualinfo', title: 'mutual information', kicker: 'SHARED BITS',
-    group: 'foundations', status: 'live', deps: ['entropy'],
-    blurb: 'How many bits knowing one thing saves you when guessing another. Catches relationships correlation is structurally blind to.',
-    load: () => import('./lessons/mutualinfo.js'),
-  },
-  {
-    id: 'ttest', title: 't-tests', kicker: 'DIFFERENCE OF MEANS',
-    group: 'tests', status: 'live', deps: ['correlation'],
-    blurb: 'One difference, divided by how much difference you would expect from noise. Includes the Welch correction for unequal variances.',
-    load: () => import('./lessons/ttest.js'),
-  },
-  {
-    id: 'anova', title: 'one-way anova', kicker: 'VARIANCE, SPLIT',
-    group: 'tests', status: 'live', deps: ['ttest'],
-    blurb: 'Three or more groups. Chop the total spread into "between groups" and "within groups" and take the ratio.',
-    load: () => import('./lessons/anova.js'),
-  },
-  {
-    id: 'linreg', title: 'linear regression', kicker: 'THE LINE',
-    group: 'models', status: 'live', deps: ['correlation'],
-    blurb: 'The same sums as correlation, asked a different question: not how tightly, but how much y moves per unit of x.',
-    load: () => import('./lessons/linreg.js'),
-  },
-  {
-    id: 'chisq', title: 'chi-square', kicker: 'COUNTS, NOT MEASURES',
-    group: 'tests', status: 'live', deps: ['settheory'],
-    blurb: 'What you saw versus what independence predicts. Squared gaps, scaled by how big a gap you should expect.',
-    load: () => import('./lessons/chisq.js'),
-  },
-  {
-    id: 'glm', title: 'the glm idea', kicker: 'ONE ENGINE, MANY MODELS',
-    group: 'models', status: 'live', deps: ['linreg'],
-    blurb: 'Link function, variance function, weighted least squares on repeat. Logistic and Poisson are the same machine with two dials moved.',
-    load: () => import('./lessons/glm.js'),
-  },
-  {
-    id: 'logistic', title: 'logistic regression', kicker: 'PROBABILITY, BENT',
-    group: 'models', status: 'live', deps: ['linreg', 'glm'],
-    blurb: 'A straight line, squashed through the logistic curve so it can never promise a probability above 1 or below 0.',
-    load: () => import('./lessons/logistic.js'),
-  },
-  {
-    id: 'poisson', title: 'poisson regression', kicker: 'COUNTING THINGS',
-    group: 'models', status: 'live', deps: ['glm'],
-    blurb: 'Counts are not measurements. The log link keeps predictions positive; the variance is forced to equal the mean.',
-    load: () => import('./lessons/poisson.js'),
-  },
-  {
-    id: 'negbin', title: 'negative binomial', kicker: 'WHEN POISSON LIES',
-    group: 'models', status: 'live', deps: ['poisson'],
-    blurb: 'Real counts are lumpier than Poisson allows. Add one dispersion parameter and the standard errors stop lying to you.',
-    load: () => import('./lessons/negbin.js'),
-  },
-  {
-    id: 'multiple', title: 'multiple regression', kicker: 'HOLDING THINGS CONSTANT',
-    group: 'models', status: 'live', deps: ['linreg', 'matrix'],
-    blurb: 'What "controlling for" actually does to your data — shown by doing it the long way, with residuals.',
-    load: () => import('./lessons/multiple.js'),
-  },
-  {
-    id: 'splines', title: 'splines', kicker: 'BENDING THE LINE',
-    group: 'models', status: 'live', deps: ['multiple'],
-    blurb: 'Straight lines that agree to meet at knots. Still ordinary regression — the curve is hiding in the columns.',
-    load: () => import('./lessons/splines.js'),
-  },
-  {
-    id: 'clt', title: 'normal distributions & the clt', short: 'normal & the clt', kicker: 'WHY BELLS APPEAR',
-    group: 'core', status: 'live', deps: [],
-    blurb: 'The central limit theorem is not a claim about your data. It is a claim about averages — and it is stranger than it sounds.',
-    load: () => import('./lessons/clt.js'),
-  },
-  {
-    id: 'bayes', title: 'bayesian basics', kicker: 'UPDATING',
-    group: 'inference', status: 'live', deps: ['settheory'],
-    blurb: 'Prior, likelihood, posterior. Watch a belief get dragged around by evidence, one observation at a time.',
-    load: () => import('./lessons/bayes.js'),
-  },
-  {
-    id: 'mcmc', title: 'markov chains & mcmc', kicker: 'RANDOM WALKS THAT LEARN',
-    group: 'inference', status: 'live', deps: ['bayes'],
-    blurb: 'When you cannot do the integral, take a walk. Metropolis, drawn one proposal at a time — including the rejected ones.',
-    load: () => import('./lessons/mcmc.js'),
-  },
-  {
-    id: 'stan', title: 'rstanarm & brms', kicker: 'ARGUMENTS & WARNINGS',
-    group: 'inference', status: 'live', deps: ['mcmc', 'linreg'],
-    blurb: 'Which arguments change the answer, and what each red warning is measuring. R-hat, ESS, divergences and posterior predictive checks, live.',
-    load: () => import('./lessons/stan.js'),
-  },
-  {
-    id: 'causal', title: 'causal estimands', kicker: 'WHOSE EFFECT?',
-    group: 'inference', status: 'live', deps: ['multiple', 'logistic'],
-    blurb: 'ATE, ATT, ATU, CATE — and the four ways to compute them, checked against a simulated world where both counterfactuals are known.',
-    load: () => import('./lessons/causal.js'),
-  },
-  {
-    id: 'decisiontree', title: 'decision trees', kicker: 'TWENTY QUESTIONS',
-    group: 'models', status: 'live', deps: ['entropy'],
-    blurb: 'Greedy yes/no questions, chosen by how much uncertainty each removes. Information theory, applied literally.',
-    load: () => import('./lessons/decisiontree.js'),
-  },
-  {
-    id: 'randomforest', title: 'random forests', kicker: 'AVERAGING UNSTABLE THINGS',
-    group: 'models', status: 'live', deps: ['decisiontree'],
-    blurb: 'One tree is high-variance. Grow hundreds of deliberately different ones, average them, and the noise cancels while the signal survives.',
-    load: () => import('./lessons/randomforest.js'),
-  },
-  {
-    id: 'neuralnet', title: 'neural networks', kicker: 'LOGISTIC, STACKED',
-    group: 'models', status: 'live', deps: ['logistic', 'derivatives'],
-    blurb: 'No new mathematics: logistic regression feeding into logistic regression, fitted by rolling downhill with the chain rule.',
-    load: () => import('./lessons/neuralnet.js'),
-  },
-  {
     id: 'algebra', title: 'algebra & inverses', kicker: 'FOUNDATION',
-    group: 'foundations', status: 'live', deps: [],
+    group: 'foundations', sub: 'the maths', status: 'live', deps: [],
     blurb: 'Solving is undoing, in reverse order. The idea behind every link function and every transformation on this site.',
     load: () => import('./lessons/algebra.js'),
   },
   {
-    id: 'matrix', title: 'matrix algebra', kicker: 'FOUNDATION',
-    group: 'foundations', status: 'live', deps: ['algebra'],
-    blurb: 'A matrix is a machine that moves space. Determinant is area, inverse is undo, and regression is one matrix equation.',
-    load: () => import('./lessons/matrix.js'),
-  },
-  {
     id: 'limits', title: 'limits', kicker: 'FOUNDATION',
-    group: 'foundations', status: 'live', deps: [],
+    group: 'foundations', sub: 'the maths', status: 'live', deps: [],
     blurb: 'Where a function is heading, whether or not it ever gets there. The step everything in calculus stands on.',
     load: () => import('./lessons/limits.js'),
   },
   {
     id: 'derivatives', title: 'derivatives', kicker: 'FOUNDATION',
-    group: 'foundations', status: 'live', deps: ['limits'],
+    group: 'foundations', sub: 'the maths', status: 'live', deps: ['limits'],
     blurb: 'A secant line, squeezed. Slope at an instant — which is how every model on this site finds its best fit.',
     load: () => import('./lessons/derivatives.js'),
   },
   {
     id: 'integrals', title: 'integrals', kicker: 'FOUNDATION',
-    group: 'foundations', status: 'live', deps: ['limits', 'derivatives'],
+    group: 'foundations', sub: 'the maths', status: 'live', deps: ['limits', 'derivatives'],
     blurb: 'Slice, multiply, add, shrink the slices. Every p-value on this site is an integral you did not have to do by hand.',
     load: () => import('./lessons/integrals.js'),
+  },
+  {
+    id: 'matrix', title: 'matrix algebra', kicker: 'FOUNDATION',
+    group: 'foundations', sub: 'the maths', status: 'live', deps: ['algebra'],
+    blurb: 'A matrix is a machine that moves space. Determinant is area, inverse is undo, and regression is one matrix equation.',
+    load: () => import('./lessons/matrix.js'),
+  },
+  {
+    id: 'settheory', title: 'set theory & probability', short: 'set theory', kicker: 'FOUNDATION',
+    group: 'foundations', sub: 'probability & information', status: 'live', deps: [],
+    blurb: 'A hundred outcomes you can count. Probability is measuring a subset; conditioning is shrinking the universe and counting again.',
+    load: () => import('./lessons/settheory.js'),
+  },
+  {
+    id: 'entropy', title: 'entropy & information', short: 'entropy', kicker: 'BITS',
+    group: 'foundations', sub: 'probability & information', status: 'live', deps: ['settheory'],
+    blurb: 'Surprise, averaged. The splitting rule in a tree, the loss in a classifier, and the deviance in every GLM here are all this one quantity.',
+    load: () => import('./lessons/entropy.js'),
+  },
+  {
+    id: 'mutualinfo', title: 'mutual information', kicker: 'SHARED BITS',
+    group: 'foundations', sub: 'probability & information', status: 'live', deps: ['entropy'],
+    blurb: 'How many bits knowing one thing saves you when guessing another. Catches relationships correlation is structurally blind to.',
+    load: () => import('./lessons/mutualinfo.js'),
+  },
+  {
+    id: 'computation', title: 'how computers do this', short: 'computation', kicker: 'THE MACHINE UNDERNEATH',
+    group: 'foundations', sub: 'the machine', status: 'live', deps: ['matrix', 'entropy'],
+    blurb: 'Big-O, floating point, why statisticians live in log space, and what a seed actually is. The catastrophic cancellation is real and running.',
+    load: () => import('./lessons/computation.js'),
+  },
+  {
+    id: 'correlation', title: 'correlation', kicker: 'PEARSON r',
+    group: 'core', sub: 'start here', status: 'live', deps: [],
+    blurb: 'Two columns in, one number out. Means, deviations, squares and a sum of products — the four moves everything else reuses.',
+    load: () => import('./lessons/correlation.js'),
+  },
+  {
+    id: 'clt', title: 'normal distributions & the clt', short: 'normal & the clt', kicker: 'WHY BELLS APPEAR',
+    group: 'core', sub: 'start here', status: 'live', deps: [],
+    blurb: 'The central limit theorem is not a claim about your data. It is a claim about averages — and it is stranger than it sounds.',
+    load: () => import('./lessons/clt.js'),
+  },
+  {
+    id: 'ttest', title: 't-tests', kicker: 'DIFFERENCE OF MEANS',
+    group: 'tests', sub: 'parametric', status: 'live', deps: ['correlation'],
+    blurb: 'One difference, divided by how much difference you would expect from noise. Includes the Welch correction for unequal variances.',
+    load: () => import('./lessons/ttest.js'),
+  },
+  {
+    id: 'anova', title: 'one-way anova', kicker: 'VARIANCE, SPLIT',
+    group: 'tests', sub: 'parametric', status: 'live', deps: ['ttest'],
+    blurb: 'Three or more groups. Chop the total spread into "between groups" and "within groups" and take the ratio.',
+    load: () => import('./lessons/anova.js'),
+  },
+  {
+    id: 'chisq', title: 'chi-square', kicker: 'COUNTS, NOT MEASURES',
+    group: 'tests', sub: 'parametric', status: 'live', deps: ['settheory'],
+    blurb: 'What you saw versus what independence predicts. Squared gaps, scaled by how big a gap you should expect.',
+    load: () => import('./lessons/chisq.js'),
+  },
+  {
+    id: 'nonparametric', title: 'rank-based tests', short: 'rank tests', kicker: 'THROW THE NUMBERS AWAY',
+    group: 'tests', sub: 'distribution-free', status: 'live', deps: ['ttest', 'correlation'],
+    blurb: 'Sign test, Wilcoxon, Mann-Whitney, Kruskal-Wallis. Same four moves, run on the order instead of the values.',
+    load: () => import('./lessons/nonparametric.js'),
+  },
+  {
+    id: 'resampling', title: 'permutation & bootstrap', short: 'resampling', kicker: 'BUILD THE NULL BY HAND',
+    group: 'tests', sub: 'distribution-free', status: 'live', deps: ['nonparametric', 'clt'],
+    blurb: 'Shuffle the labels a few thousand times and watch what a world with no effect produces. Works for statistics nobody derived a formula for.',
+    load: () => import('./lessons/resampling.js'),
+  },
+  {
+    id: 'linreg', title: 'linear regression', kicker: 'THE LINE',
+    group: 'models', sub: 'linear', status: 'live', deps: ['correlation'],
+    blurb: 'The same sums as correlation, asked a different question: not how tightly, but how much y moves per unit of x.',
+    load: () => import('./lessons/linreg.js'),
+  },
+  {
+    id: 'multiple', title: 'multiple regression', kicker: 'HOLDING THINGS CONSTANT',
+    group: 'models', sub: 'linear', status: 'live', deps: ['linreg', 'matrix'],
+    blurb: 'What "controlling for" actually does to your data — shown by doing it the long way, with residuals.',
+    load: () => import('./lessons/multiple.js'),
+  },
+  {
+    id: 'splines', title: 'splines', kicker: 'BENDING THE LINE',
+    group: 'models', sub: 'linear', status: 'live', deps: ['multiple'],
+    blurb: 'Straight lines that agree to meet at knots. Still ordinary regression — the curve is hiding in the columns.',
+    load: () => import('./lessons/splines.js'),
+  },
+  {
+    id: 'glm', title: 'the glm idea', kicker: 'ONE ENGINE, MANY MODELS',
+    group: 'models', sub: 'generalised', status: 'live', deps: ['linreg'],
+    blurb: 'Link function, variance function, weighted least squares on repeat. Logistic and Poisson are the same machine with two dials moved.',
+    load: () => import('./lessons/glm.js'),
+  },
+  {
+    id: 'logistic', title: 'logistic regression', kicker: 'PROBABILITY, BENT',
+    group: 'models', sub: 'generalised', status: 'live', deps: ['linreg', 'glm'],
+    blurb: 'A straight line, squashed through the logistic curve so it can never promise a probability above 1 or below 0.',
+    load: () => import('./lessons/logistic.js'),
+  },
+  {
+    id: 'poisson', title: 'poisson regression', kicker: 'COUNTING THINGS',
+    group: 'models', sub: 'generalised', status: 'live', deps: ['glm'],
+    blurb: 'Counts are not measurements. The log link keeps predictions positive; the variance is forced to equal the mean.',
+    load: () => import('./lessons/poisson.js'),
+  },
+  {
+    id: 'negbin', title: 'negative binomial', kicker: 'WHEN POISSON LIES',
+    group: 'models', sub: 'generalised', status: 'live', deps: ['poisson'],
+    blurb: 'Real counts are lumpier than Poisson allows. Add one dispersion parameter and the standard errors stop lying to you.',
+    load: () => import('./lessons/negbin.js'),
+  },
+  {
+    id: 'decisiontree', title: 'decision trees', kicker: 'TWENTY QUESTIONS',
+    group: 'models', sub: 'learned', status: 'live', deps: ['entropy'],
+    blurb: 'Greedy yes/no questions, chosen by how much uncertainty each removes. Information theory, applied literally.',
+    load: () => import('./lessons/decisiontree.js'),
+  },
+  {
+    id: 'randomforest', title: 'random forests', kicker: 'AVERAGING UNSTABLE THINGS',
+    group: 'models', sub: 'learned', status: 'live', deps: ['decisiontree'],
+    blurb: 'One tree is high-variance. Grow hundreds of deliberately different ones, average them, and the noise cancels while the signal survives.',
+    load: () => import('./lessons/randomforest.js'),
+  },
+  {
+    id: 'neuralnet', title: 'neural networks', kicker: 'LOGISTIC, STACKED',
+    group: 'models', sub: 'learned', status: 'live', deps: ['logistic', 'derivatives'],
+    blurb: 'No new mathematics: logistic regression feeding into logistic regression, fitted by rolling downhill with the chain rule.',
+    load: () => import('./lessons/neuralnet.js'),
+  },
+  {
+    id: 'bayes', title: 'bayesian basics', kicker: 'UPDATING',
+    group: 'inference', sub: 'bayesian', status: 'live', deps: ['settheory'],
+    blurb: 'Prior, likelihood, posterior. Watch a belief get dragged around by evidence, one observation at a time.',
+    load: () => import('./lessons/bayes.js'),
+  },
+  {
+    id: 'mcmc', title: 'markov chains & mcmc', kicker: 'RANDOM WALKS THAT LEARN',
+    group: 'inference', sub: 'bayesian', status: 'live', deps: ['bayes'],
+    blurb: 'When you cannot do the integral, take a walk. Metropolis, drawn one proposal at a time — including the rejected ones.',
+    load: () => import('./lessons/mcmc.js'),
+  },
+  {
+    id: 'stan', title: 'rstanarm & brms', kicker: 'ARGUMENTS & WARNINGS',
+    group: 'inference', sub: 'bayesian', status: 'live', deps: ['mcmc', 'linreg'],
+    blurb: 'Which arguments change the answer, and what each red warning is measuring. R-hat, ESS, divergences and posterior predictive checks, live.',
+    load: () => import('./lessons/stan.js'),
+  },
+  {
+    id: 'causal', title: 'causal estimands', kicker: 'WHOSE EFFECT?',
+    group: 'inference', sub: 'acting on it', status: 'live', deps: ['multiple', 'logistic'],
+    blurb: 'ATE, ATT, ATU, CATE — and the four ways to compute them, checked against a simulated world where both counterfactuals are known.',
+    load: () => import('./lessons/causal.js'),
+  },
+  {
+    id: 'decisiontheory', title: 'decision theory', kicker: 'FROM NUMBERS TO ACTIONS',
+    group: 'inference', sub: 'acting on it', status: 'live', deps: ['bayes'],
+    blurb: 'Expected value, utility, and the fact that reporting a mean is already a claim about what being wrong costs you.',
+    load: () => import('./lessons/decisiontheory.js'),
+  },
+  {
+    id: 'gametheory', title: 'game theory', kicker: 'WHEN THE WORLD ANSWERS BACK',
+    group: 'inference', sub: 'acting on it', status: 'live', deps: ['decisiontheory'],
+    blurb: 'Dominance, Nash equilibrium, and why an unpredictable mix is sometimes the only unexploitable move.',
+    load: () => import('./lessons/gametheory.js'),
   },
 ];
 
 export const GROUPS = {
-  foundations: { label: 'foundations', accent: 3 },
-  core: { label: 'core ideas', accent: 0 },
-  tests: { label: 'tests', accent: 1 },
-  models: { label: 'models', accent: 4 },
-  inference: { label: 'inference', accent: 2 },
+  foundations: {
+    label: 'foundations', accent: 3,
+    blurb: 'The machinery everything else is assembled from. None of it is statistics yet.',
+    subs: ['the maths', 'probability & information', 'the machine'],
+  },
+  core: {
+    label: 'core ideas', accent: 0,
+    blurb: 'The two things that, once you have them, make the rest look like variations.',
+    subs: ['start here'],
+  },
+  tests: {
+    label: 'tests', accent: 1,
+    blurb: 'Is this difference bigger than noise? Four ways of asking, with different assumptions.',
+    subs: ['parametric', 'distribution-free'],
+  },
+  models: {
+    label: 'models', accent: 4,
+    blurb: 'Not "is there an effect" but "what is the shape of it" — and what to predict next time.',
+    subs: ['linear', 'generalised', 'learned'],
+  },
+  inference: {
+    label: 'inference & decisions', accent: 2,
+    blurb: 'What you believe, how sure you are, and what you should actually do about it.',
+    subs: ['bayesian', 'acting on it'],
+  },
 };
+
+export const GROUP_ORDER = ['core', 'foundations', 'tests', 'models', 'inference'];
+
+/**
+ * Reading paths. The dependency map shows what is possible; these say what is
+ * worth doing, in order, for a particular kind of reader.
+ */
+export const TRACKS = [
+  {
+    id: 'applied', label: 'the applied researcher', accent: 0,
+    note: 'You have data and a question. This is the shortest route to answering it honestly.',
+    ids: ['correlation', 'ttest', 'anova', 'linreg', 'multiple', 'causal', 'decisiontheory'],
+  },
+  {
+    id: 'maths', label: 'the maths underneath', accent: 3,
+    note: 'Where the formulas come from. Do this if you resent being told "it can be shown that".',
+    ids: ['algebra', 'matrix', 'limits', 'derivatives', 'integrals', 'correlation'],
+  },
+  {
+    id: 'bayes', label: 'going bayesian', accent: 2,
+    note: 'From counting subsets to reading a Stan diagnostic without flinching.',
+    ids: ['settheory', 'bayes', 'mcmc', 'stan'],
+  },
+  {
+    id: 'ml', label: 'machine learning', accent: 4,
+    note: 'Information theory first, because it is the splitting rule and the loss function both.',
+    ids: ['entropy', 'decisiontree', 'randomforest', 'logistic', 'neuralnet', 'computation'],
+  },
+  {
+    id: 'broken', label: 'when your assumptions break', accent: 1,
+    note: 'Skewed data, wild values, counts that clump, and no formula in sight.',
+    ids: ['clt', 'nonparametric', 'resampling', 'negbin', 'splines'],
+  },
+];
 
 export const byId = id => LESSONS.find(l => l.id === id);
 
@@ -222,9 +306,15 @@ export const PLANNED = [
   { title: 'directed acyclic graphs', after: 'causal', note: 'choosing what to control for, and how adjusting can create bias' },
   { title: 'measurement & reliability', after: 'correlation', note: 'attenuation, Cronbach\'s alpha, and what a scale score is' },
   { title: 'power analysis', after: 'ttest', note: 'the fourth corner of the α / effect / n / power square' },
-  { title: 'bootstrapping', after: 'clt', note: 'resampling your way to a standard error when no formula exists' },
   { title: 'gradient boosting', after: 'randomforest', note: 'fitting trees to the mistakes of the previous trees' },
   { title: 'regularisation', after: 'multiple', note: 'ridge, lasso, and trading a little bias for a lot of variance' },
+  { title: 'measurement & reliability', after: 'correlation', note: 'attenuation, alpha, and what a scale score actually is — arguably the most neglected topic on this list' },
+  { title: 'missing data', after: 'multiple', note: 'MCAR, MAR, MNAR, and why deleting incomplete rows is a modelling choice' },
+  { title: 'multiple comparisons', after: 'anova', note: 'Bonferroni, false discovery rate, and what "we ran forty tests" costs' },
+  { title: 'power & study design', after: 'ttest', note: 'the fourth corner of the alpha / effect / n / power square, decided before you collect anything' },
+  { title: "Simpson's paradox & aggregation", after: 'causal', note: 'the same data reversing its sign when you group it differently' },
+  { title: 'sampling & weights', after: 'clt', note: 'how you got the data, and what survey weights are actually doing' },
+  { title: 'meta-analysis', after: 'multiple', note: 'combining studies, and the difference between fixed and random effects' },
 ];
 
 export const STATUS = {

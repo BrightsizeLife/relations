@@ -3,7 +3,7 @@
    ───────────────────────────────────────────────────────────────────────────── */
 
 import { h, clear, qs, qsa } from './core/dom.js';
-import { LESSONS, GROUPS, byId } from './registry.js';
+import { LESSONS, GROUPS, GROUP_ORDER, byId } from './registry.js';
 import { mountLesson } from './core/stage.js';
 import { renderMap, renderIndex } from './map.js';
 
@@ -18,8 +18,18 @@ function buildTabs() {
   clear(tabbar);
   tabbar.appendChild(tab('index', 'index', 0));
   tabbar.appendChild(tab('map', 'the map', 2));
-  tabbar.appendChild(h('span', { class: 'cs-tab-sep' }, '/'));
-  LESSONS.forEach((l, i) => tabbar.appendChild(tab(l.id, l.title, GROUPS[l.group].accent, l.status)));
+  GROUP_ORDER.forEach(g => {
+    const inGroup = LESSONS.filter(l => l.group === g);
+    if (!inGroup.length) return;
+    tabbar.appendChild(h('span', { class: 'cs-tab-group' },
+      h('span', { class: 'cs-tab-sep' }, '/'),
+      h('span', {
+        class: 'cs-tab-glabel',
+        style: { color: `var(--cs-accent-${GROUPS[g].accent})` },
+      }, GROUPS[g].label)));
+    inGroup.forEach(l => tabbar.appendChild(
+      tab(l.id, l.short || l.title, GROUPS[g].accent, l.status)));
+  });
 }
 
 function tab(id, label, accent, status) {

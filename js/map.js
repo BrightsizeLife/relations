@@ -5,7 +5,7 @@
    ───────────────────────────────────────────────────────────────────────────── */
 
 import { h, S, clear, qsa } from './core/dom.js';
-import { LESSONS, GROUPS, STATUS, PLANNED, byId, depth, ancestry, descendants } from './registry.js';
+import { LESSONS, GROUPS, GROUP_ORDER, TRACKS, STATUS, PLANNED, byId, depth, ancestry, descendants } from './registry.js';
 import { curvePath } from './core/dom.js';
 
 const NODE_W = 158, NODE_H = 42, GAP_X = 58, GAP_Y = 30, PAD = 30;
@@ -173,20 +173,63 @@ export function lessonCard(l, i, onNav) {
 
 export function renderIndex(root, onNav) {
   clear(root);
-  const groups = {};
-  LESSONS.forEach(l => (groups[l.group] ||= []).push(l));
-  root.appendChild(h('div', { class: 'cs-page' },
+  const page = h('div', { class: 'cs-page' },
     h('p', { class: 'cs-page-lede' },
-      'Statistics is usually taught as a list of formulas to recognise. It is actually a very small number of physical moves — ' +
-      'measure from the middle, square it, add it up, divide by something — reused in different arrangements. ' +
+      'Statistics is usually taught as a list of formulas to recognise. It is actually a very small number of physical moves — ',
+      'measure from the middle, square it, add it up, divide by something — reused in different arrangements. ',
       'Every lesson here draws those moves happening, one micro-step at a time, on real data you can drag around.'),
     h('p', { class: 'cs-page-lede' },
       h('strong', { style: { color: 'var(--cs-text-bright)' } }, 'New here? '),
-      'Start with ', h('a', { class: 'cs-link', href: '#/correlation', style: { cursor: 'pointer' } }, 'correlation'),
+      'Start with ',
+      h('button', { class: 'cs-inline-link', onclick: () => onNav('correlation') }, 'correlation'),
       ' — it builds the parts the rest of the site bolts together.'),
-    ...Object.entries(GROUPS).map(([k, g]) => !groups[k] ? null : h('section', { style: { marginTop: 'var(--cs-space-10, 2.5rem)' } },
-      h('h2', { style: { color: `var(--cs-accent-${g.accent})`, marginTop: 'var(--cs-space-8)' } }, g.label),
-      h('div', { class: 'cs-grid' }, ...groups[k].map((l, i) => lessonCard(l, i, onNav))),
-    )),
-  ));
+  );
+
+  /* ── reading tracks ── */
+  page.appendChild(h('h2', { style: { marginTop: 'var(--cs-space-12)' } }, 'where to start'));
+  page.appendChild(h('p', { class: 'cs-page-lede' },
+    'Thirty-two lessons is a lot to face down an alphabetical list of. These are routes through them — ',
+    'pick the one that matches why you are here.'));
+  page.appendChild(h('div', { class: 'cs-tracks' }, ...TRACKS.map(tr =>
+    h('div', {
+      class: 'cs-track',
+      style: { '--track-accent': `var(--cs-accent-${tr.accent})` },
+    },
+      h('div', { class: 'cs-track-head' },
+        h('span', { class: 'cs-track-label' }, tr.label),
+        h('span', { class: 'cs-track-count' }, `${tr.ids.length} lessons`)),
+      h('p', { class: 'cs-track-note' }, tr.note),
+      h('div', { class: 'cs-track-steps' }, ...tr.ids.flatMap((id, i) => {
+        const l = byId(id);
+        if (!l) return [];
+        return [
+          i ? h('span', { class: 'cs-track-arrow' }, '→') : null,
+          h('button', { class: 'cs-track-step', onclick: () => onNav(id) }, l.short || l.title),
+        ].filter(Boolean);
+      })),
+    ))));
+
+  /* ── everything, by group and sub-section ── */
+  page.appendChild(h('h2', { style: { marginTop: 'var(--cs-space-16)' } }, 'everything, in order'));
+  GROUP_ORDER.forEach(gk => {
+    const g = GROUPS[gk];
+    const inGroup = LESSONS.filter(l => l.group === gk);
+    if (!inGroup.length) return;
+    page.appendChild(h('section', { class: 'cs-group' },
+      h('h3', {
+        class: 'cs-group-head',
+        style: { color: `var(--cs-accent-${g.accent})`, borderColor: `var(--cs-accent-${g.accent})` },
+      }, g.label),
+      h('p', { class: 'cs-group-blurb' }, g.blurb),
+      ...(g.subs || ['']).map(sub => {
+        const items = inGroup.filter(l => (l.sub || '') === sub);
+        if (!items.length) return null;
+        return h('div', { class: 'cs-sub' },
+          sub ? h('div', { class: 'cs-sub-head' }, sub) : null,
+          h('div', { class: 'cs-grid' }, ...items.map((l, i) => lessonCard(l, i, onNav))));
+      }).filter(Boolean),
+    ));
+  });
+
+  root.appendChild(page);
 }
