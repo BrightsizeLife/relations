@@ -273,6 +273,52 @@ export function bracket(key, x, ya, yb, { cls = 'brace', width = 8, dur, opacity
   return path(key, pts, { cls, dur, opacity, delay });
 }
 
+/**
+ * A decision surface: a grid of cells shaded by a function of (x, y).
+ * `fn` returns a probability in [0,1]; 0 reads cold, 1 reads warm.
+ */
+export function surface(f, fn, { key = 'srf', n = 30, dur, opacity = 0.55, cold = [74, 144, 217], warm = [232, 89, 79] } = {}) {
+  const items = [];
+  const w = (f.x1 - f.x0) / n, h = (f.y0 - f.y1) / n;
+  for (let i = 0; i < n; i++) {
+    for (let j = 0; j < n; j++) {
+      const px = f.x0 + i * w, py = f.y1 + j * h;
+      const p = clamp(fn(f.ix(px + w / 2), f.iy(py + h / 2)), 0, 1);
+      const c = cold.map((v, k) => Math.round(v + (warm[k] - v) * p));
+      items.push({
+        key: `${key}-${i}-${j}`, tag: 'rect', dur: dur ?? 200,
+        attrs: { x: px, y: py, width: w + 0.7, height: h + 0.7 },
+        set: { fill: `rgb(${c[0]},${c[1]},${c[2]})`, stroke: 'none' },
+        opacity: 0.12 + opacity * Math.abs(p - 0.5) * 2,
+      });
+    }
+  }
+  return items;
+}
+
+/** the p = ½ contour of a surface, traced by marching along each column */
+export function boundary(f, fn, { key = 'bnd', n = 90, cls = 'curve curve-fit', dur } = {}) {
+  const segs = [];
+  for (let i = 0; i <= n; i++) {
+    const xv = f.dx[0] + ((f.dx[1] - f.dx[0]) * i) / n;
+    let prev = null;
+    for (let j = 0; j <= n; j++) {
+      const yv = f.dy[0] + ((f.dy[1] - f.dy[0]) * j) / n;
+      const p = fn(xv, yv);
+      if (prev !== null && (prev - 0.5) * (p - 0.5) < 0) {
+        segs.push([f.sx(xv), f.sy(yv)]);
+      }
+      prev = p;
+    }
+  }
+  return segs.map((pt, i) => ({
+    key: `${key}-${i}`, tag: 'circle', cls, dur: dur ?? 200,
+    attrs: { cx: pt[0], cy: pt[1], r: 1.6 },
+    set: { fill: 'var(--cs-text-bright)', stroke: 'none' },
+    opacity: 0.85,
+  }));
+}
+
 export const COLORS = {
   warm: 'var(--cs-data-warm)',
   cold: 'var(--cs-data-cold)',

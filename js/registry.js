@@ -12,6 +12,24 @@ export const LESSONS = [
     load: () => import('./lessons/correlation.js'),
   },
   {
+    id: 'settheory', title: 'set theory & probability', short: 'set theory', kicker: 'FOUNDATION',
+    group: 'foundations', status: 'live', deps: [],
+    blurb: 'A hundred outcomes you can count. Probability is measuring a subset; conditioning is shrinking the universe and counting again.',
+    load: () => import('./lessons/settheory.js'),
+  },
+  {
+    id: 'entropy', title: 'entropy & information', short: 'entropy', kicker: 'BITS',
+    group: 'foundations', status: 'live', deps: ['settheory'],
+    blurb: 'Surprise, averaged. The splitting rule in a tree, the loss in a classifier, and the deviance in every GLM here are all this one quantity.',
+    load: () => import('./lessons/entropy.js'),
+  },
+  {
+    id: 'mutualinfo', title: 'mutual information', kicker: 'SHARED BITS',
+    group: 'foundations', status: 'live', deps: ['entropy'],
+    blurb: 'How many bits knowing one thing saves you when guessing another. Catches relationships correlation is structurally blind to.',
+    load: () => import('./lessons/mutualinfo.js'),
+  },
+  {
     id: 'ttest', title: 't-tests', kicker: 'DIFFERENCE OF MEANS',
     group: 'tests', status: 'live', deps: ['correlation'],
     blurb: 'One difference, divided by how much difference you would expect from noise. Includes the Welch correction for unequal variances.',
@@ -31,7 +49,7 @@ export const LESSONS = [
   },
   {
     id: 'chisq', title: 'chi-square', kicker: 'COUNTS, NOT MEASURES',
-    group: 'tests', status: 'live', deps: [],
+    group: 'tests', status: 'live', deps: ['settheory'],
     blurb: 'What you saw versus what independence predicts. Squared gaps, scaled by how big a gap you should expect.',
     load: () => import('./lessons/chisq.js'),
   },
@@ -79,7 +97,7 @@ export const LESSONS = [
   },
   {
     id: 'bayes', title: 'bayesian basics', kicker: 'UPDATING',
-    group: 'inference', status: 'live', deps: [],
+    group: 'inference', status: 'live', deps: ['settheory'],
     blurb: 'Prior, likelihood, posterior. Watch a belief get dragged around by evidence, one observation at a time.',
     load: () => import('./lessons/bayes.js'),
   },
@@ -88,6 +106,36 @@ export const LESSONS = [
     group: 'inference', status: 'live', deps: ['bayes'],
     blurb: 'When you cannot do the integral, take a walk. Metropolis, drawn one proposal at a time — including the rejected ones.',
     load: () => import('./lessons/mcmc.js'),
+  },
+  {
+    id: 'stan', title: 'rstanarm & brms', kicker: 'ARGUMENTS & WARNINGS',
+    group: 'inference', status: 'live', deps: ['mcmc', 'linreg'],
+    blurb: 'Which arguments change the answer, and what each red warning is measuring. R-hat, ESS, divergences and posterior predictive checks, live.',
+    load: () => import('./lessons/stan.js'),
+  },
+  {
+    id: 'causal', title: 'causal estimands', kicker: 'WHOSE EFFECT?',
+    group: 'inference', status: 'live', deps: ['multiple', 'logistic'],
+    blurb: 'ATE, ATT, ATU, CATE — and the four ways to compute them, checked against a simulated world where both counterfactuals are known.',
+    load: () => import('./lessons/causal.js'),
+  },
+  {
+    id: 'decisiontree', title: 'decision trees', kicker: 'TWENTY QUESTIONS',
+    group: 'models', status: 'live', deps: ['entropy'],
+    blurb: 'Greedy yes/no questions, chosen by how much uncertainty each removes. Information theory, applied literally.',
+    load: () => import('./lessons/decisiontree.js'),
+  },
+  {
+    id: 'randomforest', title: 'random forests', kicker: 'AVERAGING UNSTABLE THINGS',
+    group: 'models', status: 'live', deps: ['decisiontree'],
+    blurb: 'One tree is high-variance. Grow hundreds of deliberately different ones, average them, and the noise cancels while the signal survives.',
+    load: () => import('./lessons/randomforest.js'),
+  },
+  {
+    id: 'neuralnet', title: 'neural networks', kicker: 'LOGISTIC, STACKED',
+    group: 'models', status: 'live', deps: ['logistic', 'derivatives'],
+    blurb: 'No new mathematics: logistic regression feeding into logistic regression, fitted by rolling downhill with the chain rule.',
+    load: () => import('./lessons/neuralnet.js'),
   },
   {
     id: 'algebra', title: 'algebra & inverses', kicker: 'FOUNDATION',

@@ -82,7 +82,13 @@ after you mutate `state` — that is how dragging a point updates everything.
 | glm, logistic | Challenger O-ring record (Dalal, Fowlkes & Hoadley, *JASA* 1989) |
 | poisson | von Bortkiewicz's 1898 Prussian horse-kick deaths |
 | multiple regression | `mtcars` — 1974 *Motor Trend* road tests |
-| splines, negative binomial, clt, bayes, mcmc | simulated in-browser from a fixed seed, labelled as such |
+| rstanarm & brms | the same Old Faithful regression, refitted by sampling |
+| splines, negative binomial, clt, bayes, mcmc, causal, trees, forests, nets | simulated in-browser from a fixed seed, labelled as such |
+
+Simulation is used where the lesson needs a **knowable truth** — you cannot show
+that a causal estimator recovers the right answer without knowing both potential
+outcomes, or that a model is overfitting without knowing the true curve. Every
+simulated dataset says so in its `dataNote`, with the reason.
 
 ## Keyboard
 

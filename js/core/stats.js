@@ -716,3 +716,49 @@ export const fmtR = (v, d = 3) => {
   const s = v.toFixed(d);
   return s.startsWith('0.') ? s.slice(1) : s.startsWith('-0.') ? '-' + s.slice(2) : s;
 };
+
+/* ── MCMC diagnostics ─────────────────────────────────────────────────────── */
+
+/**
+ * Effective sample size from the integrated autocorrelation, truncated at the
+ * first negligible lag. How many independent draws a correlated chain is worth.
+ */
+export function essOf(x) {
+  const n = x.length;
+  if (n < 10) return n;
+  const m = mean(x), v = varianceP(x);
+  if (v === 0) return 1;
+  let s = 0;
+  for (let lag = 1; lag < Math.min(250, n - 1); lag++) {
+    let c = 0;
+    for (let i = 0; i < n - lag; i++) c += (x[i] - m) * (x[i + lag] - m);
+    const rho = c / ((n - lag) * v);
+    if (rho <= 0.02) break;
+    s += rho;
+  }
+  return Math.max(1, Math.round(n / (1 + 2 * s)));
+}
+
+/**
+ * Split R-hat: compare the variance between chains with the variance within
+ * them. Each chain is halved first, so a single chain that has not settled
+ * still gets caught. Should be under 1.01.
+ */
+export function rhat(chains) {
+  const split = [];
+  chains.forEach(c => {
+    const h = Math.floor(c.length / 2);
+    if (h < 2) return;
+    split.push(c.slice(0, h), c.slice(h, 2 * h));
+  });
+  if (split.length < 2) return NaN;
+  const n = split[0].length, m = split.length;
+  const means = split.map(mean);
+  const vars = split.map(varianceP);
+  const grand = mean(means);
+  const B = (n / (m - 1)) * sum(means.map(v => (v - grand) ** 2));
+  const W = mean(vars);
+  if (W <= 0) return NaN;
+  const varPlus = ((n - 1) / n) * W + B / n;
+  return Math.sqrt(varPlus / W);
+}
