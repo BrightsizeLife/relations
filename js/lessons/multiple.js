@@ -67,44 +67,11 @@ export default {
         { type: 'segment', key: 'view', label: 'plot mpg against', options: [{ value: 'wt', label: 'weight' }, { value: 'hp', label: 'horsepower' }, { value: 'both', label: 'weight vs hp' }] },
       ],
       beats: [
+        { label: 'the points', hold: 1300, note: 'Thirty-two cars. One predictor across, fuel economy up.', scene: s => solo(s, 0) },
         {
           label: 'one at a time',
           note: 'Each predictor on its own looks like a clean story. <b>Switch to "weight vs hp"</b> and the problem appears.',
-          scene: s => {
-            const f = F();
-            if (s.view === 'both') {
-              f.setX(Math.min(...WT), Math.max(...WT), 0.08);
-              f.setY(Math.min(...HP), Math.max(...HP), 0.1);
-              const m = st.linreg(WT, HP);
-              return [
-                ...axes(f, { xLabel: 'weight (1000 lbs)', yLabel: 'horsepower' }),
-                fnPath(f, x => m.b0 + m.b1 * x, { key: 'l', cls: 'curve curve-warm curve-dash' }),
-                ...points(f, CARS, {
-                  key: 'p', r: 6, x: c => c[2], y: c => c[3], cls: 'pt pt-gold', stagger: 20,
-                  tip: c => `<b>${c[0]}</b><br>${c[2]} klbs · ${c[3]} hp`,
-                }),
-                label('l', f.midX, f.y1 + 6,
-                  `the two predictors correlate at r = ${st.fmtR(st.pearson(WT, HP), 2)} — they are not independent questions`,
-                  { cls: 'lab lab-mid lab-gold' }),
-              ];
-            }
-            const xs = s.view === 'wt' ? WT : HP;
-            const m = st.linreg(xs, MPG);
-            f.setX(Math.min(...xs), Math.max(...xs), 0.08);
-            f.setY(Math.min(...MPG), Math.max(...MPG), 0.12);
-            return [
-              ...axes(f, { xLabel: s.view === 'wt' ? 'weight (1000 lbs)' : 'horsepower', yLabel: 'miles per gallon' }),
-              fnPath(f, x => m.b0 + m.b1 * x, { key: 'l', cls: 'curve curve-fit' }),
-              ...points(f, CARS, {
-                key: 'p', r: 6, x: c => (s.view === 'wt' ? c[2] : c[3]), y: c => c[1], stagger: 20,
-                cls: 'pt ' + (s.view === 'wt' ? 'pt-cold' : 'pt-warm'),
-                tip: c => `<b>${c[0]}</b><br>${c[1]} mpg`,
-              }),
-              label('sl', f.midX, f.y1 + 6,
-                `on its own: ${m.b1.toFixed(3)} mpg per ${s.view === 'wt' ? '1000 lbs' : 'horsepower'}`,
-                { cls: 'lab-big lab-mid lab-green' }),
-            ];
-          },
+          scene: s => solo(s, 1),
         },
       ],
     },
@@ -389,4 +356,44 @@ const corrOf = s => st.pearson(simData(s).x1, simData(s).x2);
 function simFit(s) {
   const d = simData(s);
   return st.mlr(d.x1.map((v, i) => [v, d.x2[i]]), d.y);
+}
+
+/* ── the opening, staged ──────────────────────────────────────────────────────
+   The scatter first, then the line through it, so the line is something that
+   arrives rather than something that was always there. */
+
+function solo(s, phase) {
+  const f = F();
+  if (s.view === 'both') {
+    f.setX(Math.min(...WT), Math.max(...WT), 0.08);
+    f.setY(Math.min(...HP), Math.max(...HP), 0.1);
+    const m = st.linreg(WT, HP);
+    return [
+      ...axes(f, { xLabel: 'weight (1000 lbs)', yLabel: 'horsepower' }),
+      phase >= 1 ? fnPath(f, x => m.b0 + m.b1 * x, { key: 'l', cls: 'curve curve-warm curve-dash' }) : null,
+      ...points(f, CARS, {
+        key: 'p', r: 6, x: c => c[2], y: c => c[3], cls: 'pt pt-gold', stagger: 20,
+        tip: c => `<b>${c[0]}</b><br>${c[2]} klbs · ${c[3]} hp`,
+      }),
+      phase >= 1 ? label('l', f.midX, f.y1 + 6,
+        `the two predictors correlate at r = ${st.fmtR(st.pearson(WT, HP), 2)} — they are not independent questions`,
+        { cls: 'lab lab-mid lab-gold' }) : null,
+    ].filter(Boolean);
+  }
+  const xs = s.view === 'wt' ? WT : HP;
+  const m = st.linreg(xs, MPG);
+  f.setX(Math.min(...xs), Math.max(...xs), 0.08);
+  f.setY(Math.min(...MPG), Math.max(...MPG), 0.12);
+  return [
+    ...axes(f, { xLabel: s.view === 'wt' ? 'weight (1000 lbs)' : 'horsepower', yLabel: 'miles per gallon' }),
+    phase >= 1 ? fnPath(f, x => m.b0 + m.b1 * x, { key: 'l', cls: 'curve curve-fit' }) : null,
+    ...points(f, CARS, {
+      key: 'p', r: 6, x: c => (s.view === 'wt' ? c[2] : c[3]), y: c => c[1], stagger: 20,
+      cls: 'pt ' + (s.view === 'wt' ? 'pt-cold' : 'pt-warm'),
+      tip: c => `<b>${c[0]}</b><br>${c[1]} mpg`,
+    }),
+    phase >= 1 ? label('sl', f.midX, f.y1 + 6,
+      `on its own: ${m.b1.toFixed(3)} mpg per ${s.view === 'wt' ? '1000 lbs' : 'horsepower'}`,
+      { cls: 'lab-big lab-mid lab-green' }) : null,
+  ].filter(Boolean);
 }

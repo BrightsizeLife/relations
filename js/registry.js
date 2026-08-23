@@ -215,6 +215,13 @@ export const LESSONS = [
     load: () => import('./lessons/stan.js'),
   },
   {
+    id: 'processes', title: 'words for how things behave', short: 'process terms',
+    kicker: 'VOCABULARY THAT ONLY MEANS SOMETHING IN MOTION',
+    group: 'concepts', sub: 'how things behave over time', status: 'live', deps: ['clt', 'correlation'],
+    blurb: 'Volatility, drawdown, liquidity, memory — terms that name a behaviour rather than a quantity, each defined by running it. Ends on a +5% game where the median player is ruined.',
+    load: () => import('./lessons/processes.js'),
+  },
+  {
     id: 'causal', title: 'causal estimands', kicker: 'WHOSE EFFECT?',
     group: 'concepts', sub: 'what caused what', status: 'live', deps: ['multiple', 'logistic'],
     blurb: 'ATE, ATT, ATU, CATE — and the four ways to compute them, checked against a simulated world where both counterfactuals are known.',
@@ -238,7 +245,7 @@ export const GROUPS = {
   concepts: {
     label: 'concepts', accent: 0,
     blurb: 'The ideas everything else is built out of. Not techniques — ways of seeing what a number is and what it is allowed to claim.',
-    subs: ['how things vary', 'what your numbers are', 'how sure you can be', 'what caused what'],
+    subs: ['how things vary', 'what your numbers are', 'how things behave over time', 'how sure you can be', 'what caused what'],
   },
   maths: {
     label: 'maths', accent: 3,

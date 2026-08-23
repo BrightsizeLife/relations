@@ -68,43 +68,13 @@ export default {
         { type: 'toggle', key: 'outlier', label: 'one patient reports 42 extra hours', explain: 'A transcription error, or a patient who misunderstood the question. It happens.' },
       ],
       beats: [
+        { label: 'the values', hold: 1300, note: 'Ten patients, each with a difference. This is the number a t-test does arithmetic on.', scene: s => vr(s, 1) },
+        { label: 'their mean', hold: 1400, note: 'Add them up, divide by ten. One number, and it can be moved by any one of the ten.', scene: s => vr(s, 2) },
+        { label: 'now throw the values away', hold: 1600, note: 'Line them up in order and keep only the position. Tenth, ninth, eighth. The gaps between them are gone.', scene: s => vr(s, 3) },
         {
-          label: 'values against ranks',
-          note: 'Turn the outlier on. <b>The mean lurches; the median barely moves, and the ranks do not change at all</b> — the wild value is still just "the biggest one".',
-          scene: s => {
-            const d = diffs(s);
-            const f = F();
-            const lo = Math.min(-2, ...d) - 1, hi = Math.min(12, Math.max(...d) + 1);
-            f.setX(lo, hi); f.setY(0, 1);
-            const r = st.ranks(d);
-            const y1 = 190, y2 = 380;
-            return [
-              ...axes(f, { xLabel: 'extra hours of sleep, drug 2 − drug 1', showY: false, grid: false }),
-              { key: 'ax1', tag: 'line', cls: 'ax-line', attrs: { x1: f.x0, y1, x2: f.x1, y2: y1 } },
-              label('t1', f.x0, y1 - 40, 'the values', { cls: 'lab-big lab-cyan' }),
-              ...d.map((v, i) => ({
-                key: `v-${i}`, tag: 'circle', cls: v >= 0 ? 'pt pt-warm' : 'pt pt-cold', dur: 260,
-                attrs: { cx: f.sx(clamp(v, lo, hi)), cy: y1 + ((i % 3) - 1) * 13, r: 6 },
-                tip: `patient ${i + 1}: <b>${v.toFixed(1)}</b> hours`,
-              })),
-              vLine(f, st.mean(d), { key: 'mean', cls: 'rule-gold', y0: y1 + 34, y1: y1 - 34, dur: 260 }),
-              label('ml', f.sx(clamp(st.mean(d), lo, hi)), y1 - 44, `mean ${st.mean(d).toFixed(2)}`, { cls: 'lab-sm lab-mid lab-gold', dur: 260 }),
-
-              { key: 'ax2', tag: 'line', cls: 'ax-line', attrs: { x1: f.x0, y1: y2, x2: f.x1, y2 } },
-              label('t2', f.x0, y2 - 40, 'the ranks', { cls: 'lab-big lab-warm' }),
-              ...r.map((v, i) => ({
-                key: `r-${i}`, tag: 'circle', cls: 'pt pt-green', dur: 260,
-                attrs: { cx: f.x0 + ((v - 0.5) / d.length) * (f.x1 - f.x0), cy: y2, r: 7 },
-                tip: `patient ${i + 1}: rank <b>${v}</b> of ${d.length}`,
-              })),
-              ...r.map((v, i) => label(`rl-${i}`, f.x0 + ((v - 0.5) / d.length) * (f.x1 - f.x0), y2 + 22,
-                String(v), { cls: 'lab-sm lab-mid', dur: 260 })),
-              label('n', 376, 470,
-                s.outlier ? 'the top rank is still just "1st" — no matter how absurd the value behind it'
-                  : 'evenly spaced, by construction: ranks are always 1, 2, 3, …',
-                { cls: `lab lab-mid ${s.outlier ? 'lab-green' : ''}`, dur: 260 }),
-            ];
-          },
+          label: 'break one value',
+          note: 'Turn the outlier on. <b>The mean lurches; the median barely moves, and the ranks do not change at all</b> — the wild value is still just “the biggest one”.',
+          scene: s => vr(s, 4),
         },
       ],
     },
@@ -440,4 +410,52 @@ export default {
 function mw(s) {
   const g = groupsOf(s);
   return st.mannWhitney(g[2], g[0]);
+}
+
+/* ── the opening, staged ──────────────────────────────────────────────────────
+   The whole argument is that ranks survive something values do not, and that
+   only lands if the values are on screen by themselves first. */
+
+function vr(s, phase) {
+  const d = diffs(s);
+  const f = F();
+  const lo = Math.min(-2, ...d) - 1, hi = Math.min(12, Math.max(...d) + 1);
+  f.setX(lo, hi); f.setY(0, 1);
+  const r = st.ranks(d);
+  const y1 = 190, y2 = 380;
+
+  const out = [
+    ...axes(f, { xLabel: 'extra hours of sleep, drug 2 − drug 1', showY: false, grid: false }),
+    { key: 'ax1', tag: 'line', cls: 'ax-line', attrs: { x1: f.x0, y1, x2: f.x1, y2: y1 } },
+    label('t1', f.x0, y1 - 40, 'the values', { cls: 'lab-big lab-cyan' }),
+    ...d.map((v, i) => ({
+      key: `v-${i}`, tag: 'circle', cls: v >= 0 ? 'pt pt-warm' : 'pt pt-cold', dur: 260,
+      attrs: { cx: f.sx(clamp(v, lo, hi)), cy: y1 + ((i % 3) - 1) * 13, r: 6 },
+      tip: `patient ${i + 1}: <b>${v.toFixed(1)}</b> hours`,
+    })),
+  ];
+
+  if (phase >= 2) out.push(
+    vLine(f, st.mean(d), { key: 'mean', cls: 'rule-gold', y0: y1 + 34, y1: y1 - 34, dur: 260 }),
+    label('ml', f.sx(clamp(st.mean(d), lo, hi)), y1 - 44, `mean ${st.mean(d).toFixed(2)}`, { cls: 'lab-sm lab-mid lab-gold', dur: 260 }));
+
+  if (phase >= 3) out.push(
+    { key: 'ax2', tag: 'line', cls: 'ax-line', attrs: { x1: f.x0, y1: y2, x2: f.x1, y2 } },
+    label('t2', f.x0, y2 - 40, 'the ranks', { cls: 'lab-big lab-warm' }),
+    ...r.map((v, i) => ({
+      key: `r-${i}`, tag: 'circle', cls: 'pt pt-green', dur: 260,
+      attrs: { cx: f.x0 + ((v - 0.5) / d.length) * (f.x1 - f.x0), cy: y2, r: 7 },
+      tip: `patient ${i + 1}: rank <b>${v}</b> of ${d.length}`,
+    })),
+    ...r.map((v, i) => label(`rl-${i}`, f.x0 + ((v - 0.5) / d.length) * (f.x1 - f.x0), y2 + 22,
+      String(v), { cls: 'lab-sm lab-mid', dur: 260 })),
+    ...d.map((v, i) => path(`dr-${i}`, [
+      [f.sx(clamp(v, lo, hi)), y1 + ((i % 3) - 1) * 13 + 8],
+      [f.x0 + ((r[i] - 0.5) / d.length) * (f.x1 - f.x0), y2 - 9],
+    ], { cls: 'stick', set: { stroke: 'var(--cs-dim)', 'stroke-width': 1 }, opacity: 0.5, delay: i * 40 })),
+    label('n', 376, 470,
+      s.outlier ? 'the top rank is still just "1st" — no matter how absurd the value behind it'
+        : 'evenly spaced, by construction: ranks are always 1, 2, 3, …',
+      { cls: `lab lab-mid ${s.outlier ? 'lab-green' : ''}`, dur: 260 }));
+  return out;
 }

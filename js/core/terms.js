@@ -114,6 +114,16 @@ export const TERMS = {
   'vanishing gradient': { def: 'Derivatives below 1, multiplied once per layer, shrink to nothing before reaching the first layer. Why deep networks would not train before rectifiers.', see: 'activations' },
   saturation: { def: 'When a squashing function has stopped being able to tell two different inputs apart, because both land at the flat end.', see: 'activations' },
 
+  /* ── behaviour over time ── */
+  volatility: { def: 'The typical size of a step-to-step change. A property of the ride, not of the destination — two paths can end in the same place having had completely different years.', see: 'processes' },
+  drawdown: { def: 'The fall from a peak to the trough that followed it. Depends on the order the returns arrived in, so no distribution of returns can produce it.', see: 'processes' },
+  liquidity: { def: 'How much you can transact before your own trading moves the price against you. A relationship between the size you need and the depth that happens to be there.', see: 'processes' },
+  slippage: { def: 'The gap between the quoted price and the average price you actually got. What it costs to be bigger than the top of the book.', see: 'processes' },
+  ergodic: { def: 'A process where the time average of one path equals the average across many paths. Most things are not, and expected value quietly assumes they are.', see: 'processes' },
+  'geometric mean': { def: 'Multiply and take the root, rather than add and divide. The right average for anything that compounds, and always smaller than the arithmetic mean when values vary.', see: 'processes' },
+  stationarity: { def: 'Whether the process generating your data changed while you were watching. When it fails, statistics do not become noisy — they become answers about a world that no longer exists.', see: 'processes' },
+  autocorrelation: { def: 'How much a value knows about the one before it. Positive gives trends; negative gives a jagged path that keeps returning.', see: 'processes' },
+
   /* ── maths ── */
   derivative: { atom: true, strict: true, def: 'The slope at a single point, reached by squeezing a secant line until its two points merge.', see: 'derivatives' },
   integral: { strict: true, def: 'Area under a curve, reached by slicing it into rectangles and shrinking the slices to nothing.', see: 'integrals' },
