@@ -36,6 +36,13 @@ export const LESSONS = [
     load: () => import('./lessons/matrix.js'),
   },
   {
+    id: 'periodic', title: 'circles, waves & fourier', short: 'waves & fourier',
+    kicker: 'EVERYTHING THAT REPEATS',
+    group: 'maths', sub: 'waves', status: 'live', deps: ['algebra', 'derivatives'],
+    blurb: 'Sine is the height of a point going round a circle, unrolled. Then the reverse: any repeating shape is a sum of those, and taking it apart is a multiply and an add.',
+    load: () => import('./lessons/periodic.js'),
+  },
+  {
     id: 'settheory', title: 'set theory & probability', short: 'set theory', kicker: 'FOUNDATION',
     group: 'concepts', sub: 'how sure you can be', status: 'live', deps: [],
     blurb: 'A hundred outcomes you can count. Probability is measuring a subset; conditioning is shrinking the universe and counting again.',
@@ -127,6 +134,13 @@ export const LESSONS = [
     load: () => import('./lessons/splines.js'),
   },
   {
+    id: 'mixed', title: 'mixed-effects models', short: 'mixed effects',
+    kicker: 'GROUPS THAT BORROW FROM EACH OTHER',
+    group: 'tools', sub: 'fitting a line', status: 'live', deps: ['multiple', 'measurement'],
+    blurb: 'Ignore the groups and you pretend they are alike; fit each separately and a group of three gets a wild answer. The third option beats both, and how much it borrows is estimated rather than chosen.',
+    load: () => import('./lessons/mixed.js'),
+  },
+  {
     id: 'glm', title: 'the glm idea', kicker: 'ONE ENGINE, MANY MODELS',
     group: 'tools', sub: 'when the outcome is not a measurement', status: 'live', deps: ['linreg'],
     blurb: 'Link function, variance function, weighted least squares on repeat. Logistic and Poisson are the same machine with two dials moved.',
@@ -149,6 +163,13 @@ export const LESSONS = [
     group: 'tools', sub: 'when the outcome is not a measurement', status: 'live', deps: ['poisson'],
     blurb: 'Real counts are lumpier than Poisson allows. Add one dispersion parameter and the standard errors stop lying to you.',
     load: () => import('./lessons/negbin.js'),
+  },
+  {
+    id: 'timeseries', title: 'time series', short: 'time series',
+    kicker: 'WHEN THE ORDER IS THE DATA',
+    group: 'tools', sub: 'when time is the axis', status: 'live', deps: ['processes', 'periodic', 'linreg'],
+    blurb: 'A nominal 95% interval covering a fifth of the time, and two unrelated series significantly correlated in three attempts out of four. Both simulated live.',
+    load: () => import('./lessons/timeseries.js'),
   },
   {
     id: 'factor', title: 'factor analysis', short: 'factor analysis',
@@ -250,13 +271,14 @@ export const GROUPS = {
   maths: {
     label: 'maths', accent: 3,
     blurb: 'The machinery underneath. None of it is statistics yet, and all of it turns up the moment a formula stops being obvious.',
-    subs: ['the basics', 'calculus'],
+    subs: ['the basics', 'calculus', 'waves'],
   },
   tools: {
     label: 'analytic tools', accent: 1,
     blurb: 'The things you actually run on data. Each one is the same handful of moves in a different arrangement.',
     subs: ['comparing groups', 'when the assumptions break', 'fitting a line',
-      'when the outcome is not a measurement', 'learned from the data', 'no labels at all'],
+      'when the outcome is not a measurement', 'learned from the data',
+      'when time is the axis', 'no labels at all'],
   },
   parameters: {
     label: 'parameters', accent: 2,
@@ -342,9 +364,7 @@ export function depth(id, memo = new Map()) {
  * supposed to tell you what you can learn here and what you cannot.
  */
 export const PLANNED = [
-  { title: 'mixed-effects models', after: 'multiple', note: 'partial pooling, random intercepts and slopes, and why shrinkage is not a compromise' },
   { title: 'survival analysis', after: 'glm', note: 'censoring, Kaplan–Meier, and the Cox partial likelihood' },
-  { title: 'time series', after: 'linreg', note: 'autocorrelation, differencing, and why the CLT stops protecting you' },
   { title: 'directed acyclic graphs', after: 'causal', note: 'choosing what to control for, and how adjusting can create bias' },
   { title: 'power analysis', after: 'ttest', note: 'the fourth corner of the α / effect / n / power square' },
   { title: 'gradient boosting', after: 'randomforest', note: 'fitting trees to the mistakes of the previous trees' },
