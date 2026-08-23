@@ -101,32 +101,13 @@ export default {
         { type: 'button', key: 'snap', label: '[jump to the best cut]', action: s => { s.thresh = +bestSplit(s).thresh.toFixed(2); } },
       ],
       beats: [
+        { label: 'two features', hold: 1100, note: 'Two measurements per point. Nothing decided yet.', scene: s => cut(s, 0) },
+        { label: 'the points', hold: 1400, note: 'Two classes. The tree has never seen a colour before this moment.', scene: s => cut(s, 1) },
+        { label: 'one cut', hold: 1500, note: 'Pick a feature, pick a threshold, draw a line. That is the only move a tree has.', scene: s => cut(s, 2) },
         {
-          label: 'try a cut',
+          label: 'was it a good one?',
           note: 'Left of the line and right of the line. The bars underneath show the class mix on each side — the tree wants them as lopsided as possible.',
-          scene: s => {
-            const f = dataFrame(s);
-            const d = DATA[s.shape];
-            const th = +s.thresh;
-            const L = d.X.map((p, i) => i).filter(i => d.X[i][0] <= th);
-            const R = d.X.map((p, i) => i).filter(i => d.X[i][0] > th);
-            const pL = L.length ? st.sum(L.map(i => d.y[i])) / L.length : 0;
-            const pR = R.length ? st.sum(R.map(i => d.y[i])) / R.length : 0;
-            const bar = (x0, w, p, n, key) => [
-              rect(`${key}bg`, x0, f.y0 + 22, w, 14, { cls: 'cell', dur: 200 }),
-              rect(`${key}f`, x0, f.y0 + 22, w * p, 14, { cls: 'sq sq-pos', dur: 200 }),
-              label(`${key}l`, x0 + w / 2, f.y0 + 48, `${n} points · ${(p * 100).toFixed(0)}% warm`, { cls: 'lab-sm lab-mid', dur: 200 }),
-            ];
-            return [
-              ...axes(f, { xLabel: 'feature x₁', yLabel: 'feature x₂' }),
-              rect('lz', f.x0, f.y1, f.sx(th) - f.x0, f.y0 - f.y1, { cls: 'sq sq-neg', opacity: 0.18, dur: 200 }),
-              rect('rz', f.sx(th), f.y1, f.x1 - f.sx(th), f.y0 - f.y1, { cls: 'sq sq-pos', opacity: 0.18, dur: 200 }),
-              ...dots(s, f),
-              vLine(f, th, { key: 'cut', cls: 'rule-gold', dur: 200 }),
-              ...bar(f.x0, Math.max(2, f.sx(th) - f.x0), pL, L.length, 'L'),
-              ...bar(f.sx(th) + 2, Math.max(2, f.x1 - f.sx(th) - 2), pR, R.length, 'R'),
-            ];
-          },
+          scene: s => cut(s, 3),
         },
         {
           label: 'the gain across all cuts',
@@ -399,4 +380,39 @@ function drawTree(tree, { x0, x1, y0, y1 }) {
   }));
   items.push(label('tt', (x0 + x1) / 2, y0 - 26, 'the same model, drawn as a tree', { cls: 'lab-big lab-mid' }));
   return items;
+}
+
+/* ── the opening, staged ──────────────────────────────────────────────────────
+   Axes, then points, then a cut, then the verdict on the cut. The whole
+   apparatus used to land in one frame. */
+
+function cut(s, phase) {
+  const f = dataFrame(s);
+  const d = DATA[s.shape];
+  const th = +s.thresh;
+  const out = [...axes(f, { xLabel: 'feature x₁', yLabel: 'feature x₂' })];
+
+  if (phase >= 3) {
+    out.push(
+      rect('lz', f.x0, f.y1, f.sx(th) - f.x0, f.y0 - f.y1, { cls: 'sq sq-neg', opacity: 0.18, dur: 200 }),
+      rect('rz', f.sx(th), f.y1, f.x1 - f.sx(th), f.y0 - f.y1, { cls: 'sq sq-pos', opacity: 0.18, dur: 200 }));
+  }
+  if (phase >= 1) out.push(...dots(s, f));
+  if (phase >= 2) out.push(vLine(f, th, { key: 'cut', cls: 'rule-gold', dur: 200 }));
+
+  if (phase >= 3) {
+    const L = d.X.map((p, i) => i).filter(i => d.X[i][0] <= th);
+    const R = d.X.map((p, i) => i).filter(i => d.X[i][0] > th);
+    const pL = L.length ? st.sum(L.map(i => d.y[i])) / L.length : 0;
+    const pR = R.length ? st.sum(R.map(i => d.y[i])) / R.length : 0;
+    const bar = (x0, w, p, n, key) => [
+      rect(`${key}bg`, x0, f.y0 + 22, w, 14, { cls: 'cell', dur: 200 }),
+      rect(`${key}f`, x0, f.y0 + 22, w * p, 14, { cls: 'sq sq-pos', dur: 200 }),
+      label(`${key}l`, x0 + w / 2, f.y0 + 48, `${n} points · ${(p * 100).toFixed(0)}% warm`, { cls: 'lab-sm lab-mid', dur: 200 }),
+    ];
+    out.push(
+      ...bar(f.x0, Math.max(2, f.sx(th) - f.x0), pL, L.length, 'L'),
+      ...bar(f.sx(th) + 2, Math.max(2, f.x1 - f.sx(th) - 2), pR, R.length, 'R'));
+  }
+  return out;
 }

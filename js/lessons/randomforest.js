@@ -101,27 +101,12 @@ export default {
         { type: 'segment', key: 'shape', label: 'data', options: [{ value: 'moons', label: 'moons' }, { value: 'rings', label: 'rings' }, { value: 'xor', label: 'xor' }] },
       ],
       beats: [
+        { label: 'the data', hold: 1200, note: 'Two hundred points, two classes. The same problem the last lesson ended on.', scene: s => rf1(s, 0) },
+        { label: 'resample it', hold: 1500, note: 'Draw 200 from those 200 <em>with replacement</em>. Some points are now duplicated; some are missing entirely. Their sizes show how many times each was drawn.', scene: s => rf1(s, 1) },
         {
-          label: 'one bootstrap tree',
+          label: 'fit a tree to the resample',
           note: 'Same underlying data, a different random resample. Step through the numbers and watch the staircase rearrange itself.',
-          scene: s => {
-            const f = dataFrame(s);
-            const tr = oneTree(s, +s.which);
-            const regions = treeRegions(tr, [f.dx[0], f.dx[1], f.dy[0], f.dy[1]]);
-            return [
-              ...axes(f, { xLabel: 'x₁', yLabel: 'x₂' }),
-              ...regions.map((r, i) => {
-                const [x0, x1, y0, y1] = r.box;
-                const c = [74 + (232 - 74) * r.p, 144 + (89 - 144) * r.p, 217 + (79 - 217) * r.p].map(Math.round);
-                return rect(`r-${i}`, f.sx(x0), f.sy(y1), f.sx(x1) - f.sx(x0), f.sy(y0) - f.sy(y1), {
-                  dur: 200, set: { fill: `rgb(${c[0]},${c[1]},${c[2]})`, stroke: 'rgba(255,255,255,.1)' },
-                  opacity: 0.12 + 0.5 * Math.abs(r.p - 0.5) * 2,
-                });
-              }),
-              ...dots(s, f),
-              label('l', f.x0 + 10, f.y1 + 8, `bootstrap resample ${+s.which + 1}`, { cls: 'lab-big lab-gold', dur: 200 }),
-            ];
-          },
+          scene: s => rf1(s, 2),
         },
         {
           label: 'all twelve at once',
@@ -358,3 +343,48 @@ export default {
     },
   ],
 };
+
+/* ── the opening, staged ──────────────────────────────────────────────────────
+   The point of this step is that the boundary moves when the data barely does.
+   That only lands if you have seen the data on its own first. */
+
+function rf1(s, phase) {
+  const f = dataFrame(s);
+  const out = [...axes(f, { xLabel: 'x₁', yLabel: 'x₂' })];
+
+  if (phase >= 2) {
+    const tr = oneTree(s, +s.which);
+    const regions = treeRegions(tr, [f.dx[0], f.dx[1], f.dy[0], f.dy[1]]);
+    out.push(...regions.map((r, i) => {
+      const [x0, x1, y0, y1] = r.box;
+      const c = [74 + (232 - 74) * r.p, 144 + (89 - 144) * r.p, 217 + (79 - 217) * r.p].map(Math.round);
+      return rect(`r-${i}`, f.sx(x0), f.sy(y1), f.sx(x1) - f.sx(x0), f.sy(y0) - f.sy(y1), {
+        dur: 200, set: { fill: `rgb(${c[0]},${c[1]},${c[2]})`, stroke: 'rgba(255,255,255,.1)' },
+        opacity: 0.12 + 0.5 * Math.abs(r.p - 0.5) * 2,
+      });
+    }));
+  }
+
+  if (phase === 1) {
+    /* how many times each original point was drawn into this resample */
+    const d = DATA[s.shape];
+    const r = st.rng(101 + +s.which * 17);
+    const count = new Array(d.y.length).fill(0);
+    for (let i = 0; i < d.y.length; i++) count[Math.floor(r() * d.y.length)]++;
+    out.push(...d.X.map((p, i) => ({
+      key: `p-${i}`, tag: 'circle', dur: 260,
+      cls: count[i] ? (d.y[i] ? 'pt pt-warm' : 'pt pt-cold') : 'pt pt-ghost',
+      attrs: { cx: f.sx(p[0]), cy: f.sy(p[1]), r: count[i] ? 3 + 1.6 * count[i] : 3 },
+      opacity: count[i] ? 1 : 0.35,
+      tip: count[i] ? `drawn ${count[i]}×` : 'left out of this resample',
+    })));
+    out.push(label('ol', f.midX, f.y1 + 8,
+      `${count.filter(c => !c).length} of ${d.y.length} points left out of this resample`,
+      { cls: 'lab lab-mid lab-gold', dur: 200 }));
+  } else {
+    out.push(...dots(s, f));
+  }
+
+  if (phase >= 2) out.push(label('l', f.x0 + 10, f.y1 + 8, `bootstrap resample ${+s.which + 1}`, { cls: 'lab-big lab-gold', dur: 200 }));
+  return out;
+}

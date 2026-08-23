@@ -195,6 +195,13 @@ export function mountLesson(root, lesson, { onNav } = {}) {
       // a step can narrow a slider's range (k starts at 2 where k−1 is a
       // divisor); pull the carried-over value inside it before drawing
       if (c.type === 'slider') state[c.key] = clamp(+state[c.key], c.min, c.max);
+      if (c.type === 'segment') {
+        const vals = c.options.map(o => String(o.value ?? o));
+        if (!vals.includes(String(state[c.key]))) {
+          const v = c.options[0].value ?? c.options[0];
+          state[c.key] = typeof v === 'number' ? +v : v;
+        }
+      }
       controlDeck.appendChild(buildControl(c));
     });
   }

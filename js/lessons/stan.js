@@ -141,32 +141,14 @@ export default {
         { key: 'se', label: 'lm() std error', tone: 'muted', get: () => OLS.seB1, d: 3, wide: true },
       ],
       beats: [
+        { label: 'twelve points', hold: 1200, note: 'The geyser data from the regression lesson. Eruption length across, wait until the next one up.', scene: s => cloud(s, 0) },
+        { label: 'what lm() gives you', hold: 1500, note: 'One line. Two numbers, plus a standard error computed from a formula afterwards.', scene: s => cloud(s, 1) },
+        { label: 'one posterior draw', hold: 1400, note: 'A single draw from <code>stan_glm()</code>. One entirely plausible version of the relationship — not the best one, just one the data does not rule out.', scene: s => cloud(s, 2) },
+        { label: 'ten of them', hold: 1500, note: 'Ten draws. They disagree, and their disagreement is the point.', scene: s => cloud(s, 3) },
         {
-          label: 'a cloud of lines',
-          note: 'Each faint line is one posterior draw — one entirely plausible version of the relationship. The spread <b>is</b> the uncertainty; nothing had to be added afterwards.',
-          scene: s => {
-            const f = F();
-            f.setX(Math.min(...XS) - 0.3, Math.max(...XS) + 0.3);
-            f.setY(Math.min(...YS) - 6, Math.max(...YS) + 6);
-            const R = run(s);
-            const w = Math.min(+s.warmup, +s.iter - 10);
-            const draws = R.chains.flatMap(c => c.draws.slice(w));
-            const show = range(90).map(i => draws[Math.floor((i * draws.length) / 90)]).filter(Boolean);
-            return [
-              ...axes(f, { xLabel: 'eruption length (centred)', yLabel: 'wait until next — min' }),
-              ...show.map((d, i) => path(`ln-${i}`, [
-                [f.sx(f.dx[0]), f.sy(d[0] + d[1] * f.dx[0])],
-                [f.sx(f.dx[1]), f.sy(d[0] + d[1] * f.dx[1])],
-              ], { cls: 'curve-ghost', dur: 240, opacity: 0.22 })),
-              path('ols', [
-                [f.sx(f.dx[0]), f.sy(OLS.b0 + OLS.b1 * f.dx[0])],
-                [f.sx(f.dx[1]), f.sy(OLS.b0 + OLS.b1 * f.dx[1])],
-              ], { cls: 'curve curve-fit' }),
-              ...points(f, FAITHFUL, { key: 'p', r: 6, x: (p, i) => XS[i], y: p => p[1], cls: 'pt' }),
-              label('l', f.x0 + 10, f.y1 + 8, `${show.length} of ${draws.length} posterior draws shown`, { cls: 'lab lab-gold', dur: 240 }),
-              label('l2', f.x1 - 8, f.y1 + 8, 'green: the least-squares line', { cls: 'lab-sm lab-end lab-green' }),
-            ];
-          },
+          label: 'the whole cloud',
+          note: 'Ninety draws. The spread <b>is</b> the uncertainty; nothing had to be added afterwards.',
+          scene: s => cloud(s, 4),
         },
       ],
     },
@@ -613,4 +595,38 @@ function ppSim(s, k) {
 
 function sqrt2(inner) {
   return `<span class="fx-sqrt"><span class="fx-radical">√</span><span class="fx-rad">${inner}</span></span>`;
+}
+
+/* ── the opening, staged ──────────────────────────────────────────────────────
+   Ninety translucent lines is a striking picture and a terrible first frame:
+   there is no way to tell what one of them means. So: the data, then the
+   single line the reader already knows, then one draw, then ten, then all. */
+
+const CLOUD_N = [0, 0, 1, 10, 90];
+
+function cloud(s, phase) {
+  const f = F();
+  f.setX(Math.min(...XS) - 0.3, Math.max(...XS) + 0.3);
+  f.setY(Math.min(...YS) - 6, Math.max(...YS) + 6);
+  const n = CLOUD_N[phase];
+  const R = run(s);
+  const w = Math.min(+s.warmup, +s.iter - 10);
+  const draws = R.chains.flatMap(c => c.draws.slice(w));
+  const show = range(n).map(i => draws[Math.floor((i * draws.length) / Math.max(n, 1))]).filter(Boolean);
+
+  return [
+    ...axes(f, { xLabel: 'eruption length (centred)', yLabel: 'wait until next — min' }),
+    ...show.map((d, i) => path(`ln-${i}`, [
+      [f.sx(f.dx[0]), f.sy(d[0] + d[1] * f.dx[0])],
+      [f.sx(f.dx[1]), f.sy(d[0] + d[1] * f.dx[1])],
+    ], { cls: n > 20 ? 'curve-ghost' : 'curve curve-gold', dur: 240, delay: i * (n > 20 ? 6 : 90), opacity: n > 20 ? 0.22 : 0.75 })),
+    phase >= 1 ? path('ols', [
+      [f.sx(f.dx[0]), f.sy(OLS.b0 + OLS.b1 * f.dx[0])],
+      [f.sx(f.dx[1]), f.sy(OLS.b0 + OLS.b1 * f.dx[1])],
+    ], { cls: 'curve curve-fit' }) : null,
+    ...points(f, FAITHFUL, { key: 'p', r: 6, x: (p, i) => XS[i], y: p => p[1], cls: 'pt' }),
+    phase >= 2 ? label('l', f.x0 + 10, f.y1 + 8,
+      `${show.length} of ${draws.length} posterior draws shown`, { cls: 'lab lab-gold', dur: 240 }) : null,
+    phase >= 1 ? label('l2', f.x1 - 8, f.y1 + 8, 'green: the least-squares line', { cls: 'lab-sm lab-end lab-green' }) : null,
+  ].filter(Boolean);
 }

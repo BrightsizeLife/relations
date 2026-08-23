@@ -117,32 +117,13 @@ export default {
         { type: 'slider', key: 'patient', label: 'patient', min: 0, max: 19, step: 1, fast: true },
       ],
       beats: [
+        { label: 'one patient', hold: 1300, note: 'Patient 1, and the outcome they get <em>if treated</em>.', scene: s => both(s, 1, false) },
+        { label: 'the other world', hold: 1600, note: 'The same patient, in the world where they were not treated. The gap between the two dots is their personal treatment effect — and no study has ever measured one.', scene: s => both(s, 1, true) },
+        { label: 'five patients', hold: 1400, note: 'Everyone has both. The gaps differ, because the effect is not the same for everybody.', scene: s => both(s, 5, true) },
         {
-          label: 'both worlds',
+          label: 'all twenty',
           note: 'Every patient has a warm dot and a cold dot. The gap between them is their personal treatment effect.',
-          scene: s => {
-            const R = world(s).slice(0, 20);
-            const f = F();
-            f.setX(-0.5, 19.5);
-            f.setY(Math.min(...R.map(r => r.y0)) - 1, Math.max(...R.map(r => r.y1)) + 1);
-            return [
-              ...axes(f, { xLabel: 'patient', yLabel: 'outcome', xN: 5 }),
-              ...R.map((r, i) => path(`ln-${i}`, [[f.sx(i), f.sy(r.y0)], [f.sx(i), f.sy(r.y1)]], {
-                cls: 'stick stick-y', delay: i * 40, opacity: 0.6,
-              })),
-              ...R.map((r, i) => ({
-                key: `y1-${i}`, tag: 'circle', cls: 'pt pt-warm', delay: i * 40,
-                attrs: { cx: f.sx(i), cy: f.sy(r.y1), r: 5 },
-                tip: `patient ${i + 1}<br>if treated: <b>${r.y1.toFixed(2)}</b>`,
-              })),
-              ...R.map((r, i) => ({
-                key: `y0-${i}`, tag: 'circle', cls: 'pt pt-cold', delay: i * 40,
-                attrs: { cx: f.sx(i), cy: f.sy(r.y0), r: 5 },
-                tip: `patient ${i + 1}<br>if untreated: <b>${r.y0.toFixed(2)}</b>`,
-              })),
-              label('l', f.midX, f.y1 + 6, 'both potential outcomes — a view no study ever has', { cls: 'lab lab-mid lab-gold' }),
-            ];
-          },
+          scene: s => both(s, 20, true),
         },
         {
           label: 'what reality shows you',
@@ -496,3 +477,37 @@ export default {
 };
 
 function brk(x) { return `<span class="fx-paren">[</span>${x}<span class="fx-paren">]</span>`; }
+
+/* ── the opening, staged ──────────────────────────────────────────────────────
+   Twenty patients × two potential outcomes is eighty marks before the reader
+   knows what a potential outcome is. One patient, then their counterfactual,
+   then five, then all of them. */
+
+function both(s, n, showY0) {
+  const R = world(s).slice(0, 20);
+  const f = F();
+  f.setX(-0.5, 19.5);
+  f.setY(Math.min(...R.map(r => r.y0)) - 1, Math.max(...R.map(r => r.y1)) + 1);
+  const vis = R.slice(0, n);
+  return [
+    ...axes(f, { xLabel: 'patient', yLabel: 'outcome', xN: 5 }),
+    ...(showY0 ? vis.map((r, i) => path(`ln-${i}`, [[f.sx(i), f.sy(r.y0)], [f.sx(i), f.sy(r.y1)]], {
+      cls: 'stick stick-y', delay: i * 40, opacity: 0.6,
+      tip: `patient ${i + 1}<br>their effect: <b>${r.tau.toFixed(2)}</b>`,
+    })) : []),
+    ...vis.map((r, i) => ({
+      key: `y1-${i}`, tag: 'circle', cls: 'pt pt-warm', delay: i * 40,
+      attrs: { cx: f.sx(i), cy: f.sy(r.y1), r: n > 5 ? 5 : 7 },
+      tip: `patient ${i + 1}<br>if treated: <b>${r.y1.toFixed(2)}</b>`,
+    })),
+    ...(showY0 ? vis.map((r, i) => ({
+      key: `y0-${i}`, tag: 'circle', cls: 'pt pt-cold', delay: i * 40,
+      attrs: { cx: f.sx(i), cy: f.sy(r.y0), r: n > 5 ? 5 : 7 },
+      tip: `patient ${i + 1}<br>if untreated: <b>${r.y0.toFixed(2)}</b>`,
+    })) : []),
+    n <= 5 ? [
+      label('k1', f.sx(n - 1) + 16, f.sy(vis[n - 1].y1) + 4, 'Y(1) · if treated', { cls: 'lab-sm lab-warm' }),
+      showY0 ? label('k0', f.sx(n - 1) + 16, f.sy(vis[n - 1].y0) + 4, 'Y(0) · if not', { cls: 'lab-sm lab-cold' }) : null,
+    ] : label('l', f.midX, f.y1 + 6, 'both potential outcomes — a view no study ever has', { cls: 'lab lab-mid lab-gold' }),
+  ];
+}

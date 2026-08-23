@@ -72,33 +72,12 @@ export default {
         { type: 'slider', key: 'theta', label: 'θ — lower means lumpier', min: 0.5, max: 40, step: 0.5, fast: true, fmt: v => (+v >= 40 ? '∞ (pure Poisson)' : (+v).toFixed(1)) },
       ],
       beats: [
+        { label: 'the counts you got', hold: 1300, note: 'How many observations landed on each count. No model yet — this is the data.', scene: s => nb1(s, 1) },
+        { label: 'what Poisson expects', hold: 1600, note: 'The outline is a Poisson with exactly this mean. Where the bars sit inside it, Poisson is fine.', scene: s => nb1(s, 2) },
         {
-          label: 'the distribution of counts',
+          label: 'the tail',
           note: 'Bars are the simulated counts. The outline is what a Poisson with the same mean would predict. Watch the gap open in the tail.',
-          scene: s => {
-            const { data } = models(s);
-            const y = data.map(p => p[1]);
-            const m = st.mean(y);
-            const maxK = Math.min(40, Math.max(...y) + 2);
-            const f = F();
-            f.setX(-0.6, maxK);
-            const counts = range(maxK + 1).map(k => y.filter(v => v === k).length);
-            f.setY(0, Math.max(...counts, ...range(maxK + 1).map(k => st.poissonPmf(k, m) * y.length)) * 1.2);
-            const w = (f.x1 - f.x0) / (maxK + 1);
-            return [
-              ...axes(f, { xLabel: 'count', yLabel: 'how many observations', yN: 4 }),
-              ...counts.map((c, k) => rect(`b-${k}`, f.sx(k) - w * 0.42, f.sy(c), w * 0.84, f.y0 - f.sy(c), {
-                cls: 'bar bar-warm', dur: 240, tip: `<b>${c}</b> observations of ${k}`,
-              })),
-              ...range(maxK + 1).map(k => {
-                const e = st.poissonPmf(k, m) * y.length;
-                return rect(`e-${k}`, f.sx(k) - w * 0.5, f.sy(e), w, f.y0 - f.sy(e), { cls: 'bar-out', dur: 240 });
-              }),
-              label('cap', f.midX, f.y1 + 6,
-                s.theta >= 40 ? 'θ = ∞ · this is exactly Poisson' : `θ = ${(+s.theta).toFixed(1)} · fatter tail, same mean`,
-                { cls: 'lab-big lab-mid lab-gold', dur: 240 }),
-            ];
-          },
+          scene: s => nb1(s, 3),
         },
       ],
     },
@@ -264,3 +243,38 @@ export default {
     },
   ],
 };
+
+/* ── the opening, staged ─────────────────────────────────────────────────────
+   The data, then the model it is about to break, then where it breaks. */
+
+function nb1(s, phase) {
+  const { data } = models(s);
+  const y = data.map(p => p[1]);
+  const m = st.mean(y);
+  const maxK = Math.min(40, Math.max(...y) + 2);
+  const f = F();
+  f.setX(-0.6, maxK);
+  const counts = range(maxK + 1).map(k => y.filter(v => v === k).length);
+  f.setY(0, Math.max(...counts, ...range(maxK + 1).map(k => st.poissonPmf(k, m) * y.length)) * 1.2);
+  const w = (f.x1 - f.x0) / (maxK + 1);
+  const tail = Math.ceil(m * 2);
+
+  return [
+    ...axes(f, { xLabel: 'count', yLabel: 'how many observations', yN: 4 }),
+    ...counts.map((c, k) => rect(`b-${k}`, f.sx(k) - w * 0.42, f.sy(c), w * 0.84, f.y0 - f.sy(c), {
+      cls: 'bar bar-warm', dur: 240, opacity: phase >= 3 && k >= tail ? 1 : phase >= 3 ? 0.4 : 1,
+      tip: `<b>${c}</b> observations of ${k}`,
+    })),
+    ...(phase >= 2 ? range(maxK + 1).map(k => {
+      const e = st.poissonPmf(k, m) * y.length;
+      return rect(`e-${k}`, f.sx(k) - w * 0.5, f.sy(e), w, f.y0 - f.sy(e), { cls: 'bar-out', dur: 240 });
+    }) : []),
+    phase >= 3 ? rect('tz', f.sx(tail) - w * 0.5, f.y1, f.x1 - f.sx(tail) + w * 0.5, f.y0 - f.y1, {
+      cls: 'sq sq-resid', opacity: 0.22, dur: 240,
+    }) : null,
+    phase >= 3 ? label('tl', (f.sx(tail) + f.x1) / 2, f.y1 + 22, 'more here than Poisson allows', { cls: 'lab-sm lab-mid lab-warm' }) : null,
+    phase >= 2 ? label('cap', f.midX, f.y1 + 6,
+      s.theta >= 40 ? 'θ = ∞ · this is exactly Poisson' : `θ = ${(+s.theta).toFixed(1)} · fatter tail, same mean`,
+      { cls: 'lab-big lab-mid lab-gold', dur: 240 }) : null,
+  ].filter(Boolean);
+}

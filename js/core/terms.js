@@ -89,6 +89,31 @@ export const TERMS = {
   'R-hat': { def: 'Compares variance between MCMC chains with variance within them. Above 1.01 means they have not settled on the same answer.', see: 'stan' },
   'effective sample size': { def: 'How many independent draws your correlated MCMC draws are actually worth.', see: 'stan' },
 
+  /* ── latent structure ── */
+  loading: { def: 'How strongly one item responds to an underlying factor. A regression slope in standardised units, so also the correlation between the item and the factor.', see: 'factor' },
+  communality: { def: "The share of an item's variance that the factors account for — the squared loading. Reliability, with a factor playing the part of the true score.", see: 'factor' },
+  uniqueness: { def: 'Everything about an item that is not the factor: its measurement error plus whatever it measures that nothing else on the form asks about.', see: 'factor' },
+  eigenvalue: { def: 'How much variance one direction of a matrix accounts for. In factor analysis, how big a factor is.', see: 'factor' },
+  rotation: { def: 'Spinning the factor axes to make the loadings readable. Changes the description and not the fit, which is why two papers can report different factors from the same data.', see: 'factor' },
+  'scree plot': { def: 'Eigenvalues in descending order. Named after the rubble at the base of a cliff, which is what the uninformative factors look like.', see: 'factor' },
+  'parallel analysis': { def: 'Compare your eigenvalues with the ones pure noise would produce at the same size. Keeps only the factors that beat noise.', see: 'factor' },
+
+  /* ── groups ── */
+  'k-means': { def: 'Assign every point to its nearest centre, move every centre to the mean of its points, repeat. Assumes round clusters of similar size.', see: 'clustering' },
+  silhouette: { def: 'How much closer a point is to its own cluster than to the nearest other one. Unlike within-cluster sum of squares, it has a maximum, so it can choose k.', see: 'clustering' },
+  linkage: { def: 'What "distance between two groups" means in hierarchical clustering. Single chains along filaments; complete insists on compact balls.', see: 'clustering' },
+  dendrogram: { def: 'The tree of merges, with each join drawn at the distance the two groups were apart. Cut it at any height to choose k after the fact.', see: 'clustering' },
+  'euclidean distance': { def: 'Straight-line distance: go across, go up, take the hypotenuse. The atom of every clustering method.', see: 'clustering' },
+
+  /* ── fitting ── */
+  'learning rate': { def: 'How far you step for a given amount of slope. Too small and it crawls; too large and it overshoots and diverges.', see: 'gradientdescent' },
+  gradient: { def: 'The slope of a loss in every direction at once, stacked into a vector. Points uphill, which is why the update subtracts it.', see: 'gradientdescent' },
+  momentum: { def: 'Carry a fraction of the previous step into this one. Side-to-side wobble cancels; consistent motion accumulates.', see: 'gradientdescent' },
+  'activation function': { def: 'The one non-linear thing done to a number between layers. Without it, a hundred stacked layers are algebraically one layer.', see: 'activations' },
+  relu: { def: 'max(0, x). Negative in, zero out; positive in, unchanged. Its derivative is exactly 1 where it is on, which is why it survives depth.', see: 'activations' },
+  'vanishing gradient': { def: 'Derivatives below 1, multiplied once per layer, shrink to nothing before reaching the first layer. Why deep networks would not train before rectifiers.', see: 'activations' },
+  saturation: { def: 'When a squashing function has stopped being able to tell two different inputs apart, because both land at the flat end.', see: 'activations' },
+
   /* ── maths ── */
   derivative: { atom: true, strict: true, def: 'The slope at a single point, reached by squeezing a secant line until its two points merge.', see: 'derivatives' },
   integral: { strict: true, def: 'Area under a curve, reached by slicing it into rectangles and shrinking the slices to nothing.', see: 'integrals' },

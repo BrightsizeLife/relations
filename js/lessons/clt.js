@@ -72,26 +72,11 @@ export default {
         { type: 'segment', key: 'pop', label: 'population', options: Object.entries(POPS).map(([k, v]) => ({ value: k, label: v.label })) },
       ],
       beats: [
+        { label: 'the shape', hold: 1400, note: 'This is what the world hands you. It is not a bell, and nothing is going to make it one.', scene: s => pop1(s, 1) },
         {
-          label: 'the population',
-          note: 'This is the shape the world hands you. Nothing about it is going to change.',
-          scene: s => {
-            const P = POPS[s.pop];
-            const f = F();
-            f.setX(P.lo, P.hi);
-            const r = st.rng(1);
-            const vals = range(4000).map(() => P.draw(r));
-            const bins = st.histogram(vals, s.pop === 'spiky' ? 7 : 34, [P.lo, P.hi]);
-            f.setY(0, Math.max(...bins.map(b => b.density)) * 1.25);
-            return [
-              ...axes(f, { xLabel: 'value of one observation', yLabel: 'density', yN: 4 }),
-              ...histBars(f, bins, { key: 'h', cls: 'bar bar-cold', useDensity: true, stagger: 12 }),
-              ...(P.pdf ? [fnPath(f, P.pdf, { key: 'c', cls: 'curve', n: 220 })] : []),
-              vLine(f, P.mu, { key: 'mu', cls: 'rule-gold' }),
-              label('mul', f.sx(P.mu), f.y1 + 8, `μ = ${P.mu.toFixed(2)}`, { cls: 'lab lab-mid lab-gold' }),
-              label('nt', f.midX, f.y0 - 14, P.note, { cls: 'lab lab-mid' }),
-            ];
-          },
+          label: 'and its mean',
+          note: 'One number for the whole population. Everything that follows is about how well a handful of observations can find it.',
+          scene: s => pop1(s, 2),
         },
       ],
     },
@@ -361,3 +346,23 @@ export default {
     },
   ],
 };
+
+/* ── the opening, staged ─────────────────────────────────────────────────── */
+
+function pop1(s, phase) {
+  const P = POPS[s.pop];
+  const f = F();
+  f.setX(P.lo, P.hi);
+  const r = st.rng(1);
+  const vals = range(4000).map(() => P.draw(r));
+  const bins = st.histogram(vals, s.pop === 'spiky' ? 7 : 34, [P.lo, P.hi]);
+  f.setY(0, Math.max(...bins.map(b => b.density)) * 1.25);
+  return [
+    ...axes(f, { xLabel: 'value of one observation', yLabel: 'density', yN: 4 }),
+    ...histBars(f, bins, { key: 'h', cls: 'bar bar-cold', useDensity: true, stagger: 12 }),
+    ...(P.pdf ? [fnPath(f, P.pdf, { key: 'c', cls: 'curve', n: 220 })] : []),
+    phase >= 2 ? vLine(f, P.mu, { key: 'mu', cls: 'rule-gold' }) : null,
+    phase >= 2 ? label('mul', f.sx(P.mu), f.y1 + 8, `μ = ${P.mu.toFixed(2)}`, { cls: 'lab lab-mid lab-gold' }) : null,
+    label('nt', f.midX, f.y0 - 14, P.note, { cls: 'lab lab-mid' }),
+  ].filter(Boolean);
+}

@@ -162,6 +162,17 @@ const NUMERIC_ATTRS = new Set([
  * of what should be on screen. Anything missing fades out, anything new fades
  * in, anything shared tweens.
  */
+/**
+ * Properties a stylesheet also sets. These must go through inline style rather
+ * than a presentation attribute, because in the SVG cascade a class rule beats
+ * an attribute and the caller's explicit colour would be thrown away.
+ */
+const PAINT = new Set([
+  'fill', 'stroke', 'stroke-width', 'stroke-dasharray', 'stroke-linecap',
+  'stroke-linejoin', 'fill-opacity', 'stroke-opacity', 'font-size',
+  'font-weight', 'font-family', 'text-anchor', 'letter-spacing',
+]);
+
 export function makeScene(parent) {
   const nodes = new Map();
 
@@ -209,7 +220,12 @@ export function makeScene(parent) {
 
         if (item.cls != null && rec.el.getAttribute('class') !== item.cls) rec.el.setAttribute('class', item.cls);
         if (item.set) for (const [k, v] of Object.entries(item.set)) {
-          if (v == null) rec.el.removeAttribute(k); else rec.el.setAttribute(k, v);
+          if (v == null) { rec.el.removeAttribute(k); rec.el.style.removeProperty(k); }
+          // paint properties have to be written as inline style: a presentation
+          // attribute loses to any class rule, so `cls: 'pt', set: {fill: …}`
+          // would silently keep the class colour
+          else if (PAINT.has(k)) rec.el.style.setProperty(k, String(v));
+          else rec.el.setAttribute(k, v);
         }
         if (item.style) setStyle(rec.el, item.style);
         if (item.tip != null) rec.el.setAttribute('data-tip', item.tip); else rec.el.removeAttribute('data-tip');

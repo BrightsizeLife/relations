@@ -90,23 +90,14 @@ export default {
         { type: 'segment', key: 'shape', label: 'data', options: [{ value: 'linear', label: 'linear' }, { value: 'xor', label: 'xor' }, { value: 'moons', label: 'moons' }, { value: 'rings', label: 'rings' }] },
       ],
       beats: [
+        { label: 'two axes', hold: 1100, note: 'Two inputs. Nothing on them yet.', scene: s => one(s, 0) },
+        { label: 'the data', hold: 1400, note: 'Two hundred points, two classes. Red and blue.', scene: s => one(s, 1) },
+        { label: 'one unit draws a line', hold: 1600, note: 'A single unit can only ever produce a straight boundary. That is not a limitation of training — it is what the equation says.', scene: s => one(s, 2) },
+        { label: 'how sure it is', hold: 1600, note: 'Shading the whole plane by the unit\u2019s output. The line is just where it says 0.5.', scene: s => one(s, 3) },
         {
-          label: 'a single unit tries',
+          label: 'the verdict',
           note: 'On linearly separable data it does fine. On XOR it is stuck at chance — <b>and no amount of training will help</b>, because the model class cannot express the answer.',
-          scene: s => {
-            const f = dataFrame(s);
-            const net = NET({ ...s, hidden: 1 });
-            const acc = accOf(s, net.predict);
-            return [
-              ...axes(f, { xLabel: 'x₁', yLabel: 'x₂' }),
-              ...surface(f, (x, y) => net.predict([x, y]), { n: 30, dur: 220, opacity: 0.55 }),
-              ...boundary(f, (x, y) => net.predict([x, y]), { n: 70, dur: 220 }),
-              ...dots(s, f),
-              label('l', f.x0 + 10, f.y1 + 8, `one unit · accuracy ${(acc * 100).toFixed(1)}%`, { cls: 'lab-big lab-gold', dur: 220 }),
-              ...(s.shape === 'xor' ? [label('w', f.midX, f.y0 - 12,
-                'no straight line can do this', { cls: 'lab lab-mid lab-warm' })] : []),
-            ];
-          },
+          scene: s => one(s, 4),
         },
       ],
     },
@@ -384,3 +375,28 @@ export default {
     },
   ],
 };
+
+/* ── the opening, staged ──────────────────────────────────────────────────────
+   The first thing this lesson used to show was a shaded decision surface over
+   two hundred points: about twelve hundred marks before the reader had been
+   told anything. It now arrives in five pieces. */
+
+function one(s, phase) {
+  const f = dataFrame(s);
+  const out = [...axes(f, { xLabel: 'x₁', yLabel: 'x₂' })];
+  if (phase >= 3) {
+    const net = NET({ ...s, hidden: 1 });
+    out.push(...surface(f, (x, y) => net.predict([x, y]), { n: 30, dur: 220, opacity: 0.55 }));
+  }
+  if (phase >= 2) {
+    const net = NET({ ...s, hidden: 1 });
+    out.push(...boundary(f, (x, y) => net.predict([x, y]), { n: 70, dur: 220 }));
+  }
+  if (phase >= 1) out.push(...dots(s, f));
+  if (phase >= 4) {
+    const acc = accOf(s, NET({ ...s, hidden: 1 }).predict);
+    out.push(label('l', f.x0 + 10, f.y1 + 8, `one unit · accuracy ${(acc * 100).toFixed(1)}%`, { cls: 'lab-big lab-gold', dur: 220 }));
+    if (s.shape === 'xor') out.push(label('w', f.midX, f.y0 - 12, 'no straight line can do this', { cls: 'lab lab-mid lab-warm' }));
+  }
+  return out;
+}
