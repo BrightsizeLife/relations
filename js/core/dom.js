@@ -127,6 +127,16 @@ export function setNum(el, value, { d = 2, pre = '', suf = '', dur = 450, flash 
   tween({ dur, step: t => render(lerp(from, value, t)) });
 }
 
+/**
+ * Many steps walk through a few fixed settings and then hand over to the
+ * controls. Give this the per-beat overrides and both the scene and the
+ * readouts can resolve state the same way, so the panel can never describe a
+ * picture that is not on screen. Pass null for a beat that uses live state.
+ */
+export const beatState = table => (s, ctx) => ({
+  ...s, ...(ctx && ctx.beat != null && table[ctx.beat] ? table[ctx.beat] : null),
+});
+
 /* ── path builders ────────────────────────────────────────────────────────── */
 
 export function polyPath(pts, close = false) {

@@ -243,6 +243,20 @@ export const LESSONS = [
     load: () => import('./lessons/processes.js'),
   },
   {
+    id: 'dags', title: 'causal diagrams', short: 'dags',
+    kicker: 'THREE SHAPES, AND ONLY THREE',
+    group: 'concepts', sub: 'what caused what', status: 'live', deps: ['causal', 'multiple'],
+    blurb: 'With three variables there are exactly three wirings. Two are familiar; the third runs backwards — adjusting for it creates a correlation that was not there — and it is where the paradoxes come from.',
+    load: () => import('./lessons/dags.js'),
+  },
+  {
+    id: 'paradoxes', title: 'paradoxes', short: 'paradoxes',
+    kicker: 'SIX RESULTS THAT FEEL IMPOSSIBLE',
+    group: 'concepts', sub: 'what caused what', status: 'live', deps: ['dags', 'measurement'],
+    blurb: 'Berkeley 1973, Berkson, regression to the mean, base rates, Monty Hall and Lord. Six famous names, two mechanisms, and not one of them a failure of arithmetic.',
+    load: () => import('./lessons/paradoxes.js'),
+  },
+  {
     id: 'causal', title: 'causal estimands', kicker: 'WHOSE EFFECT?',
     group: 'concepts', sub: 'what caused what', status: 'live', deps: ['multiple', 'logistic'],
     blurb: 'ATE, ATT, ATU, CATE — and the four ways to compute them, checked against a simulated world where both counterfactuals are known.',
@@ -365,14 +379,12 @@ export function depth(id, memo = new Map()) {
  */
 export const PLANNED = [
   { title: 'survival analysis', after: 'glm', note: 'censoring, Kaplan–Meier, and the Cox partial likelihood' },
-  { title: 'directed acyclic graphs', after: 'causal', note: 'choosing what to control for, and how adjusting can create bias' },
   { title: 'power analysis', after: 'ttest', note: 'the fourth corner of the α / effect / n / power square' },
   { title: 'gradient boosting', after: 'randomforest', note: 'fitting trees to the mistakes of the previous trees' },
   { title: 'regularisation', after: 'multiple', note: 'ridge, lasso, and trading a little bias for a lot of variance' },
   { title: 'missing data', after: 'multiple', note: 'MCAR, MAR, MNAR, and why deleting incomplete rows is a modelling choice' },
   { title: 'multiple comparisons', after: 'anova', note: 'Bonferroni, false discovery rate, and what "we ran forty tests" costs' },
   { title: 'power & study design', after: 'ttest', note: 'the fourth corner of the alpha / effect / n / power square, decided before you collect anything' },
-  { title: "Simpson's paradox & aggregation", after: 'causal', note: 'the same data reversing its sign when you group it differently' },
   { title: 'sampling & weights', after: 'clt', note: 'how you got the data, and what survey weights are actually doing' },
   { title: 'meta-analysis', after: 'multiple', note: 'combining studies, and the difference between fixed and random effects' },
 ];

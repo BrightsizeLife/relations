@@ -124,6 +124,29 @@ export const TERMS = {
   stationarity: { def: 'Whether the process generating your data changed while you were watching. When it fails, statistics do not become noisy — they become answers about a world that no longer exists.', see: 'processes' },
   autocorrelation: { def: 'How much a value knows about the one before it. Positive gives trends; negative gives a jagged path that keeps returning.', see: 'processes' },
 
+  /* ── causal structure ── */
+  collider: { def: 'A variable that two others both cause. It blocks a path by default — and adjusting for it opens one, relating two things that were unrelated.', see: 'dags' },
+  mediator: { def: 'A variable on the causal route between treatment and outcome. Adjusting for it removes part of the effect you were trying to measure.', see: 'dags' },
+  'backdoor path': { def: 'A route from treatment to outcome whose first arrow points into the treatment. It carries association that is not effect.', see: 'dags' },
+  'd-separation': { def: 'The rule for whether association flows along a path: a chain or fork is open until you adjust for it; a collider is closed until you do.', see: 'dags' },
+  'selection bias': { def: 'Being in the dataset for a reason is the same as having adjusted for that reason. Anyone selected in is a collider you conditioned on without meaning to.', see: 'paradoxes' },
+  "simpson's paradox": { def: 'Every subgroup points one way and the aggregate the other. Both are correct; they answer different questions, and only a causal claim can say which you wanted.', see: 'paradoxes' },
+  'regression to the mean': { def: 'An extreme score contains luck as well as signal, and the luck does not repeat. Select on the extremes and the next measurement moves toward the middle with nothing having been done.', see: 'paradoxes' },
+  'base rate': { def: 'How common the thing is before any evidence. It decides what a positive test means, and it is printed on no test result anywhere.', see: 'paradoxes' },
+
+  /* ── over time ── */
+  autocorrelation: { def: 'The correlation of a series with a shifted copy of itself. When it is not zero, every standard error you compute is too small.', see: 'timeseries' },
+  differencing: { def: 'Model the change rather than the level. Turns a random walk into noise, and takes a spurious correlation between two walks back to nothing.', see: 'timeseries' },
+  'unit root': { def: 'φ exactly 1: no mean to return to and a variance that grows forever. Not a matter of degree — 0.99 and 1.00 are different kinds of object.', see: 'timeseries' },
+  'spurious regression': { def: 'Two unrelated trending series coming out significantly correlated. At n = 120 it happens in about three attempts out of four.', see: 'timeseries' },
+  'shrinkage': { def: 'Pulling a group estimate toward the overall mean, by how little that group is worth on its own. Not a compromise — it has lower error than either extreme.', see: 'mixed' },
+  'partial pooling': { def: 'Letting groups borrow strength from each other, by an amount estimated from the data rather than chosen.', see: 'mixed' },
+  'random effects': { def: 'Treating group effects as draws from a distribution rather than as fixed unknowns. What makes borrowing possible.', see: 'mixed' },
+  'fourier transform': { def: 'Multiply the signal by a wave at each candidate frequency and add up. Large only where they agree — a correlation with a wave.', see: 'periodic' },
+  amplitude: { def: 'How far a wave reaches from the middle. The radius of the circle that drew it.', see: 'periodic' },
+  phase: { def: 'Where the point was on its circle when the clock started. Slides a wave sideways without changing its shape.', see: 'periodic' },
+  aliasing: { def: 'A cycle sampled slower than twice per turn does not vanish — it reappears at the wrong frequency, and nothing in the data can tell you.', see: 'periodic' },
+
   /* ── maths ── */
   derivative: { atom: true, strict: true, def: 'The slope at a single point, reached by squeezing a secant line until its two points merge.', see: 'derivatives' },
   integral: { strict: true, def: 'Area under a curve, reached by slicing it into rectangles and shrinking the slices to nothing.', see: 'integrals' },
