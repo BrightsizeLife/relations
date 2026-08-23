@@ -7,7 +7,8 @@
    drawing so you can fiddle while you read.
    ───────────────────────────────────────────────────────────────────────────── */
 
-import { h, S, clear, makeScene, setNum, qsa, qs, stopAllTweens } from './dom.js';
+import { h, S, clear, makeScene, setNum, qsa, qs, stopAllTweens, clamp } from './dom.js';
+import { applyGlossary, termCard } from './terms.js';
 
 const isTouch = matchMedia('(hover: none)').matches;
 
@@ -64,6 +65,8 @@ export function mountLesson(root, lesson, { onNav } = {}) {
     depsBar(lesson.meta, onNav),
   );
 
+  applyGlossary(qs('.cs-lesson-deck', header));
+
   root.append(header, h('div', { class: 'cs-lesson-body' }, stageCol, h('div', { class: 'cs-steps-wrap' }, rail, stepCol)));
 
   /* ── steps ──────────────────────────────────────────────────────────────── */
@@ -79,6 +82,7 @@ export function mountLesson(root, lesson, { onNav } = {}) {
       step.aside ? h('div', { class: 'cs-aside', html: step.aside }) : null,
       step.dep ? depChip(step.dep, onNav) : null,
     );
+    qsa('.cs-step-prose, .cs-aside', card).forEach(el => applyGlossary(el));
     stepCol.appendChild(card);
     return card;
   });
@@ -124,6 +128,9 @@ export function mountLesson(root, lesson, { onNav } = {}) {
     beatNote.classList.toggle('is-empty', !b.note);
     renderBeatBar(step);
     renderReadouts(step);
+    // a control can move another control's value (a preset button setting two
+    // sliders); re-syncing here keeps the deck honest about the live state
+    renderControls(step);
   }
 
   function renderBeatBar(step) {
@@ -184,7 +191,12 @@ export function mountLesson(root, lesson, { onNav } = {}) {
     controlSig = sig;
     clear(controlDeck);
     controlDeck.style.display = defs.length ? '' : 'none';
-    defs.forEach(c => controlDeck.appendChild(buildControl(c)));
+    defs.forEach(c => {
+      // a step can narrow a slider's range (k starts at 2 where k−1 is a
+      // divisor); pull the carried-over value inside it before drawing
+      if (c.type === 'slider') state[c.key] = clamp(+state[c.key], c.min, c.max);
+      controlDeck.appendChild(buildControl(c));
+    });
   }
 
   function syncControls(defs) {
@@ -335,9 +347,18 @@ export function mountLesson(root, lesson, { onNav } = {}) {
   const pop = h('div', { class: 'cs-pop', role: 'tooltip' });
   root.appendChild(pop);
   function showPop(el) {
-    const txt = el.getAttribute('data-explain');
-    if (!txt) return;
-    pop.textContent = txt;
+    const key = el.getAttribute('data-term');
+    if (key) {
+      const card = termCard(key, lesson.meta.id);
+      if (!card) return;
+      pop.innerHTML = card;
+      pop.classList.add('is-term');
+    } else {
+      const txt = el.getAttribute('data-explain');
+      if (!txt) return;
+      pop.textContent = txt;
+      pop.classList.remove('is-term');
+    }
     pop.classList.add('show');
     const r = el.getBoundingClientRect();
     const rr = root.getBoundingClientRect();
@@ -356,17 +377,17 @@ export function mountLesson(root, lesson, { onNav } = {}) {
   }
 
   root.addEventListener('pointerover', e => {
-    const ex = e.target.closest('[data-explain]');
+    const ex = e.target.closest('[data-explain],[data-term]');
     if (ex) showPop(ex);
     const lk = e.target.closest('[data-link]');
     if (lk) setHighlight(lk.getAttribute('data-link'));
   });
   root.addEventListener('pointerout', e => {
-    if (e.target.closest('[data-explain]')) hidePop();
+    if (e.target.closest('[data-explain],[data-term]')) hidePop();
     if (e.target.closest('[data-link]')) setHighlight(null);
   });
   root.addEventListener('focusin', e => {
-    const ex = e.target.closest('[data-explain]');
+    const ex = e.target.closest('[data-explain],[data-term]');
     if (ex) showPop(ex);
     const lk = e.target.closest('[data-link]');
     if (lk) setHighlight(lk.getAttribute('data-link'));

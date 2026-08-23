@@ -70,12 +70,27 @@ body {
   border-bottom: 1px solid var(--cs-border-dark);
 }
 .cs-tabbar {
-  display: flex; gap: 6px; align-items: center;
-  overflow-x: auto; scrollbar-width: none;
-  padding: 10px max(var(--cs-space-4), calc(50vw - 720px));
+  display: block;
+  padding: 0;
   max-width: 100%;
 }
-.cs-tabbar::-webkit-scrollbar { display: none; }
+/* two rows: the five categories, then the lessons inside the one you are in */
+.cs-tabrow {
+  display: flex; gap: 6px; align-items: center;
+  overflow-x: auto; scrollbar-width: none;
+  padding: 9px max(var(--cs-space-4), calc(50vw - 720px));
+  max-width: 100%;
+}
+.cs-tabrow::-webkit-scrollbar { display: none; }
+.cs-tabrow-top { padding-bottom: 7px; }
+.cs-tabrow-sub {
+  padding-top: 0; padding-bottom: 9px;
+  border-top: 1px solid var(--cs-border-dark);
+  padding-top: 8px;
+}
+.cs-tabrow-sub.empty { display: none; }
+.cs-tabrow-sub .cs-tab { font-size: 0.68rem; padding: 4px 11px; }
+.cs-tabrow-top .cs-tab { font-weight: 700; }
 .cs-tab {
   --tab-accent: var(--cs-cyan);
   flex: 0 0 auto;
@@ -106,6 +121,17 @@ body {
   background: var(--cs-amber);
 }
 .cs-tab-sep { flex: 0 0 auto; color: var(--cs-dim); padding: 0 4px; user-select: none; }
+.cs-tabrow-sub .cs-tab-glabel {
+  flex: 0 0 auto;
+  font-size: 0.58rem;
+  letter-spacing: var(--cs-tracking-widest);
+  text-transform: uppercase;
+  color: var(--cs-dim);
+  padding: 0 4px 0 12px;
+  white-space: nowrap;
+  user-select: none;
+}
+.cs-tabrow-sub .cs-tab-glabel:first-child { padding-left: 0; }
 
 /* ══ lesson shell ═══════════════════════════════════════════════════════════ */
 
@@ -227,6 +253,8 @@ body {
 .sq-pos     { fill: rgba(232,89,79,.19);  stroke: rgba(232,89,79,.6); }
 .sq-neg     { fill: rgba(74,144,217,.19); stroke: rgba(74,144,217,.6); }
 .sq-resid   { fill: rgba(232,89,79,.16);  stroke: rgba(232,89,79,.5); }
+.sq-gold    { fill: rgba(245,166,35,.20); stroke: rgba(245,166,35,.65); }
+.sq-dim     { fill: rgba(255,255,255,.05);stroke: rgba(255,255,255,.16); }
 
 .curve      { fill: none; stroke: var(--cs-data-gold); stroke-width: 2; stroke-linejoin: round; }
 .curve-fit  { stroke: var(--cs-data-green); stroke-width: 2.4; }
@@ -716,20 +744,6 @@ body {
   .cs-step { transition: none; }
 }
 
-/* ══ grouped tab bar ════════════════════════════════════════════════════════ */
-
-.cs-tab-group {
-  display: inline-flex; align-items: center; gap: 8px;
-  flex: 0 0 auto; padding-left: 4px;
-}
-.cs-tab-glabel {
-  font-size: 0.56rem;
-  letter-spacing: .16em;
-  text-transform: uppercase;
-  opacity: .8;
-  white-space: nowrap;
-}
-
 /* ══ reading tracks ═════════════════════════════════════════════════════════ */
 
 .cs-tracks { display: grid; gap: 10px; }
@@ -791,3 +805,63 @@ body {
   padding: 0; cursor: pointer; text-decoration: underline;
 }
 .cs-inline-link:hover { color: var(--cs-cyan); }
+
+/* ══ glossary terms ═════════════════════════════════════════════════════════ */
+
+/* Every known word in the prose is underlined once. Hover or focus for the
+   definition. The heavier underline marks an "atom" — an idea the rest of the
+   site is assembled out of. */
+.cs-term {
+  border-bottom: 1px dotted rgba(255,255,255,.22);
+  cursor: help;
+  transition: border-color .15s, color .15s;
+}
+.cs-term:hover, .cs-term:focus-visible {
+  color: var(--cs-text-bright);
+  border-bottom-color: var(--cs-cyan);
+  outline: none;
+}
+.cs-term-atom {
+  border-bottom: 1px solid rgba(0,212,255,.42);
+}
+.cs-term-atom:hover, .cs-term-atom:focus-visible { border-bottom-color: var(--cs-cyan); }
+
+.cs-pop.is-term { max-width: 320px; padding: 10px 12px; }
+.cs-term-name {
+  display: inline-block;
+  font-size: var(--cs-text-data-xs);
+  letter-spacing: var(--cs-tracking-wide);
+  text-transform: uppercase;
+  color: var(--cs-cyan);
+  font-weight: 700;
+}
+.cs-term-atom-tag {
+  display: inline-block;
+  margin-left: var(--cs-space-2);
+  font-size: 0.55rem;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--cs-data-gold);
+  border: 1px solid rgba(245,166,35,.4);
+  border-radius: 2px;
+  padding: 0 .35em;
+  vertical-align: 1px;
+}
+.cs-term-def {
+  display: block;
+  margin-top: var(--cs-space-2);
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--cs-text-prose);
+}
+.cs-term-see {
+  display: block;
+  margin-top: var(--cs-space-2);
+  padding-top: var(--cs-space-2);
+  border-top: 1px solid var(--cs-border-dark);
+  font-size: 0.6rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--cs-muted);
+}

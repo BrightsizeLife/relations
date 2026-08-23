@@ -182,13 +182,22 @@ export function renderIndex(root, onNav) {
       h('strong', { style: { color: 'var(--cs-text-bright)' } }, 'New here? '),
       'Start with ',
       h('button', { class: 'cs-inline-link', onclick: () => onNav('correlation') }, 'correlation'),
-      ' — it builds the parts the rest of the site bolts together.'),
+      ' — it builds the parts the rest of the site bolts together. Everything is filed under five headings: ',
+      ...GROUP_ORDER.flatMap((gk, i) => [
+        i ? document.createTextNode(i === GROUP_ORDER.length - 1 ? ' and ' : ', ') : null,
+        h('button', {
+          class: 'cs-inline-link',
+          style: { color: `var(--cs-accent-${GROUPS[gk].accent})` },
+          onclick: () => onNav('g/' + gk),
+        }, GROUPS[gk].label),
+      ].filter(Boolean)),
+      '.'),
   );
 
   /* ── reading tracks ── */
   page.appendChild(h('h2', { style: { marginTop: 'var(--cs-space-12)' } }, 'where to start'));
   page.appendChild(h('p', { class: 'cs-page-lede' },
-    'Thirty-two lessons is a lot to face down an alphabetical list of. These are routes through them — ',
+    `${LESSONS.length} lessons is a lot to face down an alphabetical list of. These are routes through them — `,
     'pick the one that matches why you are here.'));
   page.appendChild(h('div', { class: 'cs-tracks' }, ...TRACKS.map(tr =>
     h('div', {
@@ -230,6 +239,50 @@ export function renderIndex(root, onNav) {
       }).filter(Boolean),
     ));
   });
+
+  root.appendChild(page);
+}
+
+
+/* ── one category, on its own page ────────────────────────────────────────── */
+
+export function renderGroup(root, gk, onNav) {
+  clear(root);
+  const g = GROUPS[gk];
+  const inGroup = LESSONS.filter(l => l.group === gk);
+  const accent = `var(--cs-accent-${g.accent})`;
+
+  const page = h('div', { class: 'cs-page' },
+    h('h2', { class: 'cs-group-head', style: { color: accent, borderColor: accent } }, g.label),
+    h('p', { class: 'cs-page-lede' }, g.blurb),
+  );
+
+  (g.subs || ['']).forEach(sub => {
+    const items = inGroup.filter(l => (l.sub || '') === sub);
+    if (!items.length) return;
+    page.appendChild(h('div', { class: 'cs-sub' },
+      sub ? h('div', { class: 'cs-sub-head' }, sub) : null,
+      h('div', { class: 'cs-grid' }, ...items.map((l, i) => lessonCard(l, i, onNav)))));
+  });
+
+  /* what is coming to this category, stated plainly rather than left blank */
+  const soon = PLANNED.filter(pl => { const a = byId(pl.after); return a && a.group === gk; });
+  if (soon.length) {
+    page.appendChild(h('div', { class: 'cs-sub' },
+      h('div', { class: 'cs-sub-head' }, 'not built yet'),
+      h('div', { class: 'cs-grid' }, ...soon.map(pl => h('div', {
+        class: 'cs-card', style: { '--card-accent': 'var(--cs-dim)', cursor: 'default' },
+      },
+        h('span', { class: 'cs-card-kicker', style: { color: 'var(--cs-muted)' } }, 'NOT STARTED'),
+        h('span', { class: 'cs-card-title', style: { color: 'var(--cs-muted)' } }, pl.title),
+        h('span', { class: 'cs-card-desc' }, pl.note),
+        h('span', { class: 'cs-card-foot' },
+          h('span', { class: 'cs-badge cs-badge-soon' }, 'not yet'),
+          h('button', {
+            class: 'cs-dep-chip needs', onclick: () => onNav(pl.after),
+          }, 'would follow ' + (byId(pl.after).short || byId(pl.after).title))),
+      )))));
+  }
 
   root.appendChild(page);
 }

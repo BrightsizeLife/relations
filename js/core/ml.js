@@ -173,6 +173,7 @@ function featureImportance(trees, nFeat) {
 /* ── one-hidden-layer neural network ──────────────────────────────────────── */
 
 const ACT = {
+  identity: { f: x => x, d: () => 1, label: 'identity' },
   tanh: { f: x => Math.tanh(x), d: y => 1 - y * y, label: 'tanh' },
   relu: { f: x => Math.max(0, x), d: y => (y > 0 ? 1 : 0), label: 'relu' },
   logistic: { f: x => 1 / (1 + Math.exp(-x)), d: y => y * (1 - y), label: 'logistic' },
