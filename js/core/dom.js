@@ -60,6 +60,28 @@ function append(el, kids) {
   }
 }
 
+/**
+ * Upper-case the Latin letters and leave everything else exactly as it is.
+ *
+ * CSS text-transform:uppercase turns λ into Λ, σ into Σ, β into Β. On a
+ * statistics site that is not a styling detail — Λ and λ are different symbols,
+ * and a readout labelled "Σ/√N" is a different formula from σ/√n. So the caps
+ * are applied here instead, and HTML tags and entities are stepped over so a
+ * class name or a &nbsp; does not get mangled on the way through.
+ */
+const CAPS_SKIP = /<[^>]*>|&[#a-zA-Z0-9]+;/g;
+const upperAscii = s => s.replace(/[a-z]/g, c => c.toUpperCase());
+export function caps(text) {
+  const s = String(text ?? '');
+  let out = '', last = 0, m;
+  CAPS_SKIP.lastIndex = 0;
+  while ((m = CAPS_SKIP.exec(s))) {
+    out += upperAscii(s.slice(last, m.index)) + m[0];
+    last = m.index + m[0].length;
+  }
+  return out + upperAscii(s.slice(last));
+}
+
 export const qs = (sel, root = document) => root.querySelector(sel);
 export const qsa = (sel, root = document) => [...root.querySelectorAll(sel)];
 export const clear = el => { while (el.firstChild) el.removeChild(el.firstChild); return el; };
@@ -89,7 +111,17 @@ function tick(now) {
   else ticking = false;
 }
 
+/**
+ * Someone who has asked their operating system to stop moving things has asked
+ * this site too. Every animation on the page goes through this function, so
+ * collapsing the duration here is enough: the drawing still updates, it just
+ * arrives rather than slides.
+ */
+const stillness = matchMedia('(prefers-reduced-motion: reduce)');
+export const reduceMotion = () => stillness.matches;
+
 export function tween({ dur = 600, delay = 0, easing = ease.out, step, done }) {
+  if (stillness.matches) { dur = 0; delay = 0; }
   const tw = { start: performance.now() + delay, dur, easing, step, done };
   running.add(tw);
   if (!ticking) { ticking = true; requestAnimationFrame(tick); }

@@ -11,9 +11,13 @@ import { h, clear, qs, qsa } from './core/dom.js';
 import { LESSONS, GROUPS, GROUP_ORDER, byId } from './registry.js';
 import { mountLesson } from './core/stage.js';
 import { renderMap, renderIndex, renderGroup } from './map.js';
+import { init as initTheme, themeSwitch, announce } from './core/theme.js';
 
 const app = qs('#app');
 const tabbar = qs('#tabbar');
+
+initTheme();
+qs('.cs-masthead').appendChild(themeSwitch());
 
 const topRow = h('div', { class: 'cs-tabrow cs-tabrow-top' });
 const subRow = h('div', { class: 'cs-tabrow cs-tabrow-sub' });
@@ -49,9 +53,11 @@ function buildSub(group) {
 }
 
 function tab(id, label, accent, status) {
+  const wip = status && status !== 'live';
   return h('button', {
-    class: 'cs-tab' + (status && status !== 'live' ? ' wip' : ''),
+    class: 'cs-tab' + (wip ? ' wip' : ''),
     'data-tab': id,
+    'aria-label': wip ? `${label} (work in progress)` : null,
     style: { '--tab-accent': `var(--cs-accent-${accent})` },
     onclick: () => go(id),
   }, label);
@@ -62,6 +68,7 @@ function markActive(id, group) {
     const key = t.dataset.tab;
     const on = key === id || (group && key === 'g/' + group);
     t.classList.toggle('active', on);
+    if (key === id) t.setAttribute('aria-current', on ? 'page' : 'false');
     if (key === id && on) t.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   });
 }
@@ -103,6 +110,7 @@ async function route() {
   markActive(id, entry.group);
 
   document.title = `${entry.title} · show your work`;
+  announce(`${entry.title}. ${entry.blurb || ''}`);
   const view = h('div', { class: 'cs-view' });
   app.appendChild(view);
   view.appendChild(h('div', { class: 'cs-loading' }, 'building the drawing…'));

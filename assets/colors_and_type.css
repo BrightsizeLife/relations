@@ -78,6 +78,38 @@
   /* Data gradient (used in data journalism headers, posters) */
   --cs-data-gradient: linear-gradient(90deg, #E8594F, #F5A623, #4A90D9);
 
+
+  /* ── Scene / series colours ──────────────────────────────────────────────
+     The chart layer. These are NOT the --cs-data-* signal colours: those mean
+     temperature. These mean "which series is this", and they are chosen by
+     search rather than by eye, maximising the worst-case CIE-Lab distance
+     across normal vision, protanopia, deuteranopia and tritanopia, subject to
+     clearing 6:1 against the ground.
+
+     Worst co-occurring pair under any of those four: 31 Lab units. The old
+     red/blue pair scored 1.5 in greyscale and about 20 under deuteranopia.
+
+     THE RULE THAT FALLS OUT OF THE SEARCH, and it is not negotiable:
+     forcing every series to clear the same contrast floor against one
+     background forces their luminances together, so in greyscale (print, a
+     bad projector, a phone in sunlight) some pairs collapse to zero distance.
+     No palette can fix that. Colour therefore may never be the only channel —
+     every pair that shares a picture also differs in dash, fill or weight.
+     See the .sc-* redundancy block in app.css. */
+  --sc-0:  #e8e4da;   /* raw data, nothing claimed about it yet */
+  --sc-1:  #f5a623;   /* series A · above · positive · the highlighted thing */
+  --sc-2:  #af6efa;   /* series B · below · negative · the comparison */
+  --sc-3:  #00cdff;   /* the horizontal component — x, the predictor */
+  --sc-4:  #fa6e46;   /* the vertical component — y, the outcome */
+  --sc-5:  #23a578;   /* the model: fits, predictions, "this one is right" */
+  --sc-ghost: #3a3a44; /* the discarded alternative, still on screen */
+
+  /* ── Focus ── */
+  /* One ring, drawn as two: the ground colour first so the ring reads on top of
+     whatever it lands on, then the ring itself. 3px, never removed. */
+  --cs-focus:       #ffd24d;
+  --cs-focus-width: 3px;
+
   /* ── Typography ── */
   --cs-font-sans:    'Inter', system-ui, sans-serif;
   --cs-font-serif:   'Playfair Display', Georgia, serif;
@@ -154,6 +186,113 @@
   --cs-shadow-glow-violet: 0 0 24px rgba(179,136,255,0.2);
   --cs-shadow-tooltip:     0 4px 20px rgba(0,0,0,0.6);
   --cs-shadow-modal:       0 8px 40px rgba(0,0,0,0.8);
+}
+
+
+/* ══════════════════════════════════════════════════════════════════════════════
+   THEMES
+   Dark is the brand and the default. Light and high-contrast are opt-in, set by
+   a data-theme attribute on <html> (see js/core/theme.js). The attribute is
+   always written by script, so nothing here has to be duplicated inside a
+   prefers-* media query.
+   ══════════════════════════════════════════════════════════════════════════════ */
+
+:root { color-scheme: dark; }
+
+[data-theme="light"] {
+  color-scheme: light;
+
+  --cs-bg:           #faf8f4;
+  --cs-bg-surface:   #f1eee6;
+  --cs-bg-overlay:   rgba(0,0,0,0.035);
+  --cs-bg-card:      #ffffff;
+  --cs-bg-code:      #f4f1e9;
+
+  --cs-text:         #1c1a16;
+  --cs-text-bright:  #000000;
+  --cs-text-prose:   #2c2922;
+  --cs-muted:        #5c584f;   /* 6.4:1 on the ground — still readable at 10px */
+  --cs-dim:          #b4aea1;
+
+  --cs-border:       rgba(0,0,0,0.16);
+  --cs-border-dim:   rgba(0,0,0,0.07);
+  --cs-border-data:  #d8d2c4;
+  --cs-border-dark:  #e5e1d6;
+
+  /* the neons cannot survive a light ground; these are their darkened selves,
+     each one still clearing 4.5:1 and keeping its hue so the rotation reads */
+  --cs-cyan:         #00697f;
+  --cs-coral:        #bf3226;
+  --cs-amber:        #7a6300;
+  --cs-purple:       #6032cc;
+  --cs-lime:         #00705a;
+  --cs-link:         #0a54c2;
+
+  --cs-data-warm:    #b8352a;
+  --cs-data-cold:    #1f5d9e;
+  --cs-data-gold:    #8a5b00;
+  --cs-data-green:   #00705a;
+  --cs-data-gradient: linear-gradient(90deg, #b8352a, #8a5b00, #1f5d9e);
+
+  --sc-0:  #1c1a16;
+  --sc-1:  #a85b09;
+  --sc-2:  #7d4bb4;
+  --sc-3:  #054669;
+  --sc-4:  #8c0a10;
+  --sc-5:  #007d7d;
+  --sc-ghost: #b0aa9d;
+  --cs-focus: #7a3f00;
+
+  --cs-shadow-sm:  0 1px 4px rgba(0,0,0,0.10);
+  --cs-shadow-md:  0 4px 20px rgba(0,0,0,0.12);
+  --cs-shadow-xl:  0 20px 60px rgba(0,0,0,0.16);
+  --cs-shadow-tooltip: 0 4px 20px rgba(0,0,0,0.20);
+  --cs-shadow-modal:   0 8px 40px rgba(0,0,0,0.26);
+}
+
+[data-theme="hc"] {
+  color-scheme: dark;
+
+  --cs-bg:           #000000;
+  --cs-bg-surface:   #0b0b0b;
+  --cs-bg-overlay:   rgba(255,255,255,0.10);
+  --cs-bg-card:      #000000;
+  --cs-bg-code:      #0b0b0b;
+
+  --cs-text:         #ffffff;
+  --cs-text-bright:  #ffffff;
+  --cs-text-prose:   #ffffff;
+  --cs-muted:        #d6d6d6;   /* 15.9:1 — "muted" here means quieter, not fainter */
+  --cs-dim:          #8f8f8f;
+
+  --cs-border:       rgba(255,255,255,0.62);
+  --cs-border-dim:   rgba(255,255,255,0.34);
+  --cs-border-data:  #9a9a9a;
+  --cs-border-dark:  #6f6f6f;
+
+  --cs-cyan:         #5ce1ff;
+  --cs-coral:        #ff8f7a;
+  --cs-amber:        #ffe14d;
+  --cs-purple:       #c8a8ff;
+  --cs-lime:         #4dffb8;
+  --cs-link:         #7ec2ff;
+
+  --cs-data-warm:    #ff8f7a;
+  --cs-data-cold:    #8fc4ff;
+  --cs-data-gold:    #ffc94d;
+  --cs-data-green:   #4dffb8;
+  --cs-data-gradient: linear-gradient(90deg, #ff8f7a, #ffc94d, #8fc4ff);
+
+  /* every one of these clears 7:1 on black */
+  --sc-0:  #ffffff;
+  --sc-1:  #f5af0f;
+  --sc-2:  #aa82fa;
+  --sc-3:  #7dafd2;
+  --sc-4:  #f57d4b;
+  --sc-5:  #3ceb87;
+  --sc-ghost: #8f8f8f;
+  --cs-focus: #ffe14d;
+  --cs-focus-width: 4px;
 }
 
 
@@ -330,10 +469,10 @@
 }
 
 /* Inline datum spans */
-.cs-datum-warm    { color: var(--cs-data-warm);  background: rgba(232,89,79,.1);   padding: 0.1em 0.3em; border-radius: 3px; font-weight: 600; font-family: var(--cs-font-mono); font-size: 0.85em; }
-.cs-datum-cold    { color: var(--cs-data-cold);  background: rgba(74,144,217,.1);  padding: 0.1em 0.3em; border-radius: 3px; font-weight: 600; font-family: var(--cs-font-mono); font-size: 0.85em; }
-.cs-datum-neutral { color: var(--cs-data-gold);  background: rgba(245,166,35,.1);  padding: 0.1em 0.3em; border-radius: 3px; font-weight: 600; font-family: var(--cs-font-mono); font-size: 0.85em; }
-.cs-datum-green   { color: var(--cs-data-green); background: rgba(105,240,174,.08);padding: 0.1em 0.3em; border-radius: 3px; font-weight: 600; font-family: var(--cs-font-mono); font-size: 0.85em; }
+.cs-datum-warm    { color: var(--cs-data-warm);  background: color-mix(in srgb, var(--cs-data-warm) 12%, transparent);   padding: 0.1em 0.3em; border-radius: 3px; font-weight: 600; font-family: var(--cs-font-mono); font-size: 0.85em; }
+.cs-datum-cold    { color: var(--cs-data-cold);  background: color-mix(in srgb, var(--cs-data-cold) 12%, transparent);  padding: 0.1em 0.3em; border-radius: 3px; font-weight: 600; font-family: var(--cs-font-mono); font-size: 0.85em; }
+.cs-datum-neutral { color: var(--cs-data-gold);  background: color-mix(in srgb, var(--cs-data-gold) 12%, transparent);  padding: 0.1em 0.3em; border-radius: 3px; font-weight: 600; font-family: var(--cs-font-mono); font-size: 0.85em; }
+.cs-datum-green   { color: var(--cs-data-green); background: color-mix(in srgb, var(--cs-data-green) 12%, transparent);padding: 0.1em 0.3em; border-radius: 3px; font-weight: 600; font-family: var(--cs-font-mono); font-size: 0.85em; }
 
 /* Stat card */
 .cs-stat-card {
@@ -366,7 +505,7 @@
   border-radius: var(--cs-radius-md);
   padding: 1.2rem 1.5rem;
   line-height: 1.7;
-  color: #c8c8c8;
+  color: var(--cs-text-prose);
   overflow-x: auto;
 }
 
@@ -393,7 +532,7 @@
 /* Data toggle button */
 .cs-data-toggle {
   background: var(--cs-bg-card);
-  border: 1px solid #333;
+  border: 1px solid var(--cs-border-data);
   color: var(--cs-muted);
   padding: 0.35rem 0.8rem;
   border-radius: var(--cs-radius-sm);
@@ -403,11 +542,11 @@
   cursor: pointer;
   transition: all 0.15s;
 }
-.cs-data-toggle:hover { border-color: #555; color: #ccc; }
+.cs-data-toggle:hover { border-color: var(--cs-muted); color: var(--cs-text); }
 .cs-data-toggle.active {
-  background: var(--cs-data-warm);
-  border-color: var(--cs-data-warm);
-  color: #fff;
+  background: var(--sc-1);
+  border-color: var(--sc-1);
+  color: var(--cs-bg);
 }
 
 /* Data CTA button */
@@ -427,7 +566,7 @@
 }
 .cs-data-cta:hover {
   background: var(--cs-data-warm);
-  color: #000;
+  color: var(--cs-bg);
 }
 
 
@@ -463,5 +602,5 @@
   font-family: var(--cs-font-mono);
   font-size: var(--cs-text-data-sm);
   letter-spacing: 0.05em;
-  color: #666;
+  color: var(--cs-muted);
 }

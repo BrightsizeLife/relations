@@ -128,6 +128,13 @@ export const LESSONS = [
     load: () => import('./lessons/multiple.js'),
   },
   {
+    id: 'regularisation', title: 'regularisation', short: 'regularisation',
+    kicker: 'PAYING A MODEL TO BE SMALLER',
+    group: 'tools', sub: 'fitting a line', status: 'live', deps: ['multiple', 'linreg', 'gradientdescent'],
+    blurb: 'Thirty rows and twenty-six columns: training error 0.19, test error 26.9. Ridge, lasso, why squares shrink and absolute values delete, and cross-validation choosing the price.',
+    load: () => import('./lessons/regularisation.js'),
+  },
+  {
     id: 'splines', title: 'splines', kicker: 'BENDING THE LINE',
     group: 'tools', sub: 'fitting a line', status: 'live', deps: ['multiple'],
     blurb: 'Straight lines that agree to meet at knots. Still ordinary regression — the curve is hiding in the columns.',
@@ -163,6 +170,13 @@ export const LESSONS = [
     group: 'tools', sub: 'when the outcome is not a measurement', status: 'live', deps: ['poisson'],
     blurb: 'Real counts are lumpier than Poisson allows. Add one dispersion parameter and the standard errors stop lying to you.',
     load: () => import('./lessons/negbin.js'),
+  },
+  {
+    id: 'survival', title: 'survival analysis', short: 'survival',
+    kicker: 'HOW LONG UNTIL',
+    group: 'tools', sub: 'when the outcome is not a measurement', status: 'live', deps: ['glm', 'logistic', 'chisq'],
+    blurb: 'Some of the answers are still missing on purpose. Both obvious fixes say three months where the truth is eleven and a half; Kaplan–Meier, the log-rank test and the Cox partial likelihood, built up one event time at a time.',
+    load: () => import('./lessons/survival.js'),
   },
   {
     id: 'timeseries', title: 'time series', short: 'time series',
@@ -378,10 +392,8 @@ export function depth(id, memo = new Map()) {
  * supposed to tell you what you can learn here and what you cannot.
  */
 export const PLANNED = [
-  { title: 'survival analysis', after: 'glm', note: 'censoring, Kaplan–Meier, and the Cox partial likelihood' },
   { title: 'power analysis', after: 'ttest', note: 'the fourth corner of the α / effect / n / power square' },
   { title: 'gradient boosting', after: 'randomforest', note: 'fitting trees to the mistakes of the previous trees' },
-  { title: 'regularisation', after: 'multiple', note: 'ridge, lasso, and trading a little bias for a lot of variance' },
   { title: 'missing data', after: 'multiple', note: 'MCAR, MAR, MNAR, and why deleting incomplete rows is a modelling choice' },
   { title: 'multiple comparisons', after: 'anova', note: 'Bonferroni, false discovery rate, and what "we ran forty tests" costs' },
   { title: 'power & study design', after: 'ttest', note: 'the fourth corner of the alpha / effect / n / power square, decided before you collect anything' },

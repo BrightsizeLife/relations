@@ -136,13 +136,13 @@ export function axes(f, {
 
   if (xLabel) out.push({
     key: prefix + '-xlab', tag: 'text', cls: 'ax-label', dur,
-    attrs: { x: (f.x0 + f.x1) / 2, y: f.h - 10 }, text: xLabel,
+    attrs: { x: (f.x0 + f.x1) / 2, y: f.h - 10 }, text: caps(xLabel),
   });
   if (yLabel) out.push({
     key: prefix + '-ylab', tag: 'text', cls: 'ax-label', dur,
     attrs: { x: 0, y: 0 },
     set: { transform: `translate(14 ${(f.y0 + f.y1) / 2}) rotate(-90)` },
-    text: yLabel,
+    text: caps(yLabel),
   });
   return out;
 }
@@ -277,7 +277,11 @@ export function bracket(key, x, ya, yb, { cls = 'brace', width = 8, dur, opacity
  * A decision surface: a grid of cells shaded by a function of (x, y).
  * `fn` returns a probability in [0,1]; 0 reads cold, 1 reads warm.
  */
-export function surface(f, fn, { key = 'srf', n = 30, dur, opacity = 0.55, cold = [74, 144, 217], warm = [232, 89, 79] } = {}) {
+export function surface(f, fn, { key = 'srf', n = 30, dur, opacity = 0.55, cold, warm } = {}) {
+  // read the live tokens rather than baking the palette in, so a surface
+  // follows the theme like every other mark does
+  cold = cold || tokenRGB('--sc-2');
+  warm = warm || tokenRGB('--sc-1');
   const items = [];
   const w = (f.x1 - f.x0) / n, h = (f.y0 - f.y1) / n;
   for (let i = 0; i < n; i++) {
@@ -319,13 +323,23 @@ export function boundary(f, fn, { key = 'bnd', n = 90, cls = 'curve curve-fit', 
   }));
 }
 
+/** a theme token, as [r,g,b] — for the handful of places that must interpolate */
+export function tokenRGB(name, fallback = [128, 128, 128]) {
+  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  const m = /^#([0-9a-f]{6})$/i.exec(v);
+  if (m) return [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16));
+  const r = /rgba?\(([^)]+)\)/.exec(v);
+  if (r) return r[1].split(',').slice(0, 3).map(x => +x);
+  return fallback;
+}
+
 export const COLORS = {
-  warm: 'var(--cs-data-warm)',
-  cold: 'var(--cs-data-cold)',
-  gold: 'var(--cs-data-gold)',
-  green: 'var(--cs-data-green)',
-  cyan: 'var(--cs-cyan)',
-  coral: 'var(--cs-coral)',
+  warm: 'var(--sc-1)',
+  cold: 'var(--sc-2)',
+  gold: 'var(--sc-1)',
+  green: 'var(--sc-5)',
+  cyan: 'var(--sc-3)',
+  coral: 'var(--sc-4)',
   amber: 'var(--cs-amber)',
   purple: 'var(--cs-purple)',
   lime: 'var(--cs-lime)',

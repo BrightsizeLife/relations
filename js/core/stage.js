@@ -7,7 +7,7 @@
    drawing so you can fiddle while you read.
    ───────────────────────────────────────────────────────────────────────────── */
 
-import { h, S, clear, makeScene, setNum, qsa, qs, stopAllTweens, clamp } from './dom.js';
+import { h, S, clear, makeScene, setNum, qsa, qs, stopAllTweens, clamp, reduceMotion, caps } from './dom.js';
 import { applyGlossary, termCard } from './terms.js';
 
 const isTouch = matchMedia('(hover: none)').matches;
@@ -26,10 +26,12 @@ export function mountLesson(root, lesson, { onNav } = {}) {
 
   /* ── shell ──────────────────────────────────────────────────────────────── */
 
+  const noteId = `${lesson.meta.id}-beat-note`;
   const svg = S('svg', {
     class: 'cs-canvas', viewBox: `0 0 ${size.w} ${size.h}`,
-    preserveAspectRatio: 'xMidYMid meet', role: 'img',
+    preserveAspectRatio: 'xMidYMid meet', role: 'img', tabindex: '0',
     'aria-label': `Diagram for ${lesson.meta.title}`,
+    'aria-describedby': noteId,
   });
   const defs = S('defs', {}, ...(lesson.defs ? lesson.defs() : []));
   const sceneG = S('g', { class: 'scene' });
@@ -41,7 +43,9 @@ export function mountLesson(root, lesson, { onNav } = {}) {
   const btnPrev = h('button', { class: 'cs-mini-btn', title: 'previous micro-step (←)', 'aria-label': 'previous micro-step' }, '‹');
   const btnNext = h('button', { class: 'cs-mini-btn', title: 'next micro-step (→)', 'aria-label': 'next micro-step' }, '›');
   const btnReplay = h('button', { class: 'cs-mini-btn cs-replay', title: 'replay this step' }, '↺ replay');
-  const beatBar = h('div', { class: 'cs-beatbar' }, btnPrev, beatDots, btnNext, btnReplay);
+  const beatBar = h('div', {
+    class: 'cs-beatbar', role: 'group', 'aria-label': 'micro-steps of this step',
+  }, btnPrev, beatDots, btnNext, btnReplay);
 
   const readoutStrip = h('div', { class: 'cs-readouts' });
   const controlDeck = h('div', { class: 'cs-controls' });
@@ -53,9 +57,12 @@ export function mountLesson(root, lesson, { onNav } = {}) {
     h('div', { class: 'cs-beat-note' })
   );
   const beatNote = qs('.cs-beat-note', stageCol);
+  beatNote.id = noteId;
+  beatNote.setAttribute('role', 'status');
+  beatNote.setAttribute('aria-live', 'polite');
 
   const stepCol = h('div', { class: 'cs-steps' });
-  const rail = h('div', { class: 'cs-rail', 'aria-hidden': 'true' });
+  const rail = h('nav', { class: 'cs-rail', 'aria-label': 'steps in this lesson' });
 
   const header = h('header', { class: 'cs-lesson-head' },
     h('div', { class: 'cs-kicker cs-lesson-kicker' }, lesson.meta.kicker || ''),
@@ -90,7 +97,10 @@ export function mountLesson(root, lesson, { onNav } = {}) {
   steps.forEach(step => {
     const dot = h('button', {
       class: 'cs-rail-dot', title: step.title, 'data-step': step.idx,
-      onclick: () => cards[step.idx].scrollIntoView({ behavior: 'smooth', block: 'center' }),
+      'aria-label': `step ${step.idx + 1}: ${step.title}`,
+      onclick: () => cards[step.idx].scrollIntoView({
+        behavior: reduceMotion() ? 'auto' : 'smooth', block: 'center',
+      }),
     });
     rail.appendChild(dot);
   });
@@ -126,6 +136,11 @@ export function mountLesson(root, lesson, { onNav } = {}) {
     scene.update(items.flat(3).filter(Boolean), { dur: opts.dur });
     beatNote.innerHTML = b.note || '';
     beatNote.classList.toggle('is-empty', !b.note);
+    const where = step.beats.length > 1
+      ? `, micro-step ${beat + 1} of ${step.beats.length}${b.label ? ': ' + b.label : ''}`
+      : '';
+    svg.setAttribute('aria-label',
+      `${lesson.meta.title}, step ${cur + 1} of ${steps.length}: ${step.title}${where}`);
     renderBeatBar(step);
     renderReadouts(step);
     // a control can move another control's value (a preset button setting two
@@ -139,9 +154,11 @@ export function mountLesson(root, lesson, { onNav } = {}) {
     if (n <= 1) return;
     clear(beatDots);
     for (let i = 0; i < n; i++) {
+      const name = step.beats[i].label || `micro-step ${i + 1}`;
       beatDots.appendChild(h('button', {
         class: 'cs-beat-dot' + (i === beat ? ' active' : '') + (i < beat ? ' done' : ''),
-        title: step.beats[i].label || `micro-step ${i + 1}`,
+        title: name, 'aria-label': `micro-step ${i + 1} of ${n}: ${name}`,
+        'aria-current': i === beat ? 'true' : 'false',
         onclick: () => { clearTimers(); beat = i; draw(); },
       }));
     }
@@ -164,9 +181,11 @@ export function mountLesson(root, lesson, { onNav } = {}) {
           class: 'cs-ro' + (r.wide ? ' wide' : ''),
           'data-explain': r.explain || null,
           'data-link': r.link || null,
+          role: 'group',
+          'aria-label': String(r.label ?? r.key ?? '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(),
           tabindex: r.explain ? '0' : null,
         },
-          h('span', { class: 'cs-ro-label', html: r.label }), val);
+          h('span', { class: 'cs-ro-label', html: caps(r.label) }), val);
         readoutStrip.appendChild(box);
         readoutEls.set(r.key || r.label, val);
       });
@@ -211,13 +230,20 @@ export function mountLesson(root, lesson, { onNav } = {}) {
       const el = qs(`[data-ctl="${c.key}"]`, controlDeck);
       if (!el) return;
       const v = state[c.key];
-      if (c.type === 'toggle') el.classList.toggle('active', !!v);
+      if (c.type === 'toggle') {
+        el.classList.toggle('active', !!v);
+        el.setAttribute('aria-pressed', String(!!v));
+      }
       else if (c.type === 'slider' && el.value != v) {
         el.value = v;
         const out = qs(`[data-ctlval="${c.key}"]`, controlDeck);
         if (out) out.textContent = c.fmt ? c.fmt(v) : v;
       } else if (c.type === 'segment') {
-        qsa('button', el).forEach(b => b.classList.toggle('active', b.dataset.val === String(v)));
+        qsa('button', el).forEach(b => {
+          const on = b.dataset.val === String(v);
+          b.classList.toggle('active', on);
+          b.setAttribute('aria-checked', String(on));
+        });
       }
     });
   }
@@ -233,6 +259,7 @@ export function mountLesson(root, lesson, { onNav } = {}) {
         c.fmt ? c.fmt(state[c.key]) : String(state[c.key]));
       const input = h('input', {
         type: 'range', class: 'cs-slider', 'data-ctl': c.key,
+        'aria-label': String(c.label).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(),
         min: c.min, max: c.max, step: c.step ?? 1, value: state[c.key],
         oninput: e => {
           const v = +e.target.value;
@@ -246,19 +273,33 @@ export function mountLesson(root, lesson, { onNav } = {}) {
     if (c.type === 'toggle') {
       return h('button', {
         class: 'cs-data-toggle' + (state[c.key] ? ' active' : ''), 'data-ctl': c.key,
-        onclick: e => { commit(!state[c.key]); e.currentTarget.classList.toggle('active', !!state[c.key]); },
+        'aria-pressed': String(!!state[c.key]),
+        onclick: e => {
+          commit(!state[c.key]);
+          e.currentTarget.classList.toggle('active', !!state[c.key]);
+          e.currentTarget.setAttribute('aria-pressed', String(!!state[c.key]));
+        },
         'data-explain': c.explain || null,
       }, c.label);
     }
     if (c.type === 'segment') {
-      const wrap = h('div', { class: 'cs-segment', 'data-ctl': c.key });
+      const plain = String(c.label || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      const wrap = h('div', {
+        class: 'cs-segment', 'data-ctl': c.key,
+        role: 'radiogroup', 'aria-label': plain || c.key,
+      });
       c.options.forEach(o => {
         const val = o.value ?? o;
         wrap.appendChild(h('button', {
           class: 'cs-seg-btn' + (String(state[c.key]) === String(val) ? ' active' : ''),
           'data-val': String(val), 'data-explain': o.explain || null,
+          role: 'radio', 'aria-checked': String(String(state[c.key]) === String(val)),
           onclick: () => {
-            qsa('button', wrap).forEach(b => b.classList.toggle('active', b.dataset.val === String(val)));
+            qsa('button', wrap).forEach(b => {
+              const on = b.dataset.val === String(val);
+              b.classList.toggle('active', on);
+              b.setAttribute('aria-checked', String(on));
+            });
             commit(typeof val === 'number' ? +val : val);
           },
         }, o.label ?? String(o)));
@@ -278,6 +319,9 @@ export function mountLesson(root, lesson, { onNav } = {}) {
   function playFrom(i = 0) {
     clearTimers();
     const step = steps[cur];
+    // asked not to be animated at: land on the finished picture and leave the
+    // dots there to walk back through at the reader's own pace
+    if (reduceMotion()) { beat = step.beats.length - 1; draw({ dur: 0 }); return; }
     beat = i;
     draw();
     let acc = 0;
