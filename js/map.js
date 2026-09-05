@@ -36,7 +36,9 @@ export function renderMap(root, onNav) {
 
   const svg = S('svg', {
     class: 'cs-map', viewBox: `0 0 ${W} ${H}`, preserveAspectRatio: 'xMinYMin meet',
-    role: 'img', 'aria-label': 'Dependency map of every lesson',
+    // group, not img: it has focusable children, and a role of img promises a
+    // screen reader that there is nothing inside to reach
+    role: 'group', 'aria-label': 'Dependency map of every lesson',
   });
 
   // tier captions
@@ -68,7 +70,12 @@ export function renderMap(root, onNav) {
   LESSONS.forEach(l => {
     const p = pos.get(l.id);
     const accent = `var(--cs-accent-${GROUPS[l.group].accent})`;
-    const g = S('g', { class: 'map-node', 'data-id': l.id, tabindex: '0', role: 'link' });
+    // an SVG <g role="link"> takes no name from its children, so it has to be
+    // given one or a screen reader announces an unlabelled link
+    const g = S('g', {
+      class: 'map-node', 'data-id': l.id, tabindex: '0', role: 'link',
+      'aria-label': `${l.title} — ${GROUPS[l.group].label}${l.status === 'live' ? '' : ', not built yet'}`,
+    });
     g.appendChild(S('rect', {
       x: p.x, y: p.y, width: NODE_W, height: NODE_H, rx: 5,
       fill: 'var(--cs-bg-card)', stroke: l.status === 'live' ? accent : 'var(--cs-border-data)',
@@ -84,7 +91,7 @@ export function renderMap(root, onNav) {
     }, document.createTextNode(GROUPS[l.group].label.toUpperCase())));
     g.appendChild(S('circle', {
       cx: p.x + NODE_W - 12, cy: p.y + 12, r: 3.5,
-      fill: l.status === 'live' ? 'var(--cs-data-green)' : l.status === 'wip' ? 'var(--cs-amber)' : 'var(--cs-dim)',
+      fill: l.status === 'live' ? 'var(--sc-5)' : l.status === 'wip' ? 'var(--sc-1)' : 'var(--cs-dim)',
     }));
 
     const light = on => {
@@ -118,8 +125,8 @@ export function renderMap(root, onNav) {
       'Nothing in statistics arrives from nowhere. Every method on this site is assembled out of the ones to its left. ' +
       'Hover a box to light up its whole chain — everything you need before it, and everything it goes on to make possible.'),
     h('div', { class: 'cs-legend' },
-      h('span', {}, h('i', { style: { background: 'var(--cs-data-green)' } }), `${counts.live || 0} built`),
-      ...(counts.wip ? [h('span', {}, h('i', { style: { background: 'var(--cs-amber)' } }), `${counts.wip} in progress`)] : []),
+      h('span', {}, h('i', { style: { background: 'var(--sc-5)' } }), `${counts.live || 0} built`),
+      ...(counts.wip ? [h('span', {}, h('i', { style: { background: 'var(--sc-1)' } }), `${counts.wip} in progress`)] : []),
       h('span', {}, h('i', { style: { background: 'var(--cs-dim)' } }), `${PLANNED.length} not started`),
       ...Object.entries(GROUPS).map(([k, g]) =>
         h('span', {}, h('i', { style: { background: `var(--cs-accent-${g.accent})` } }), g.label)),

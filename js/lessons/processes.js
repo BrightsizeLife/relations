@@ -506,7 +506,7 @@ function drag(s, phase) {
     })),
     bal.length <= 4 ? bal.map((v, i) => numLabel('bv' + i, f.sx(i), f.sy(v) - 16, v, { cls: 'lab lab-mid lab-cyan', d: 2, delay: i * 90 })) : null,
     phase >= 2 ? label('m1', f.sx(0.5), f.sy(130) - 22, '+50%', { cls: 'lab-sm lab-mid lab-green' }) : null,
-    phase >= 2 ? label('m2', f.sx(1.5), f.sy(130) - 22, '−40%', { cls: 'lab-sm lab-mid lab-warm' }) : null,
+    phase >= 2 ? label('m2', f.sx(1.5), f.sy(130) - 38, '−40%', { cls: 'lab-sm lab-mid lab-warm' }) : null,
     phase >= 3 ? [
       numLabel('a1', 500, 130, arith * 100, { cls: 'lab-big lab-gold', d: 1, pre: 'arithmetic: +', suf: '%' }),
       label('a2', 500, 150, 'per round, on average', { cls: 'lab-sm' }),

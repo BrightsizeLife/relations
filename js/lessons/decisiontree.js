@@ -292,8 +292,8 @@ export default {
               })),
               vLine(f, bd, { key: 'bd', cls: 'rule-gold rule-dash' }),
               { key: 'now', tag: 'circle', cls: 'pt pt-green', dur: 200, attrs: { cx: f.sx(+s.depth), cy: f.sy(errs(s).test), r: 8 } },
-              label('l1', f.x1 - 6, f.sy(tr[10]) - 10, 'training error — always improving', { cls: 'lab-sm lab-end lab-cyan' }),
-              label('l2', f.x1 - 6, f.sy(te[10]) + 18, 'held-out error — the honest one', { cls: 'lab-sm lab-end lab-warm' }),
+              label('l1', f.x1 - 6, f.sy(tr[10]) + 22, 'training error — always improving', { cls: 'lab-sm lab-end lab-cyan' }),
+              label('l2', f.x1 - 6, f.sy(te[10]) - 12, 'held-out error — the honest one', { cls: 'lab-sm lab-end lab-warm' }),
               label('l3', f.sx(bd), f.y1 + 10, `best depth: ${bd}`, { cls: 'lab lab-mid lab-gold' }),
             ];
           },

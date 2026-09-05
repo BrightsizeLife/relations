@@ -603,7 +603,7 @@ export default {
               { key: 'start', tag: 'line', cls: 'rule-faint rule-dash', attrs: { x1: start, y1: 240, x2: start, y2: 360 } },
               { key: 'finish', tag: 'line', cls: 'rule-gold', attrs: { x1: links.at(-1).end, y1: 240, x2: links.at(-1).end, y2: 360 } },
               label('sl', start, 226, 'start', { cls: 'lab-sm lab-mid' }),
-              label('fl', links.at(-1).end, 226, 'finish', { cls: 'lab-sm lab-mid lab-gold' }),
+              label('fl', links.at(-1).end, 208, 'finish', { cls: 'lab-sm lab-mid lab-gold' }),
               label('zero', 376, 400, 'Σ (xᵢ − x̄) = 0', { cls: 'lab-big lab-mid' }),
               label('zero2', 376, 424, 'raw deviations cannot measure spread — they undo each other', { cls: 'lab-sm lab-mid' }),
             ];
@@ -985,8 +985,8 @@ export default {
               hLine(f, d.my, { key: 'my', cls: 'rule-y link-meany' }),
               ...scatter(s, f, d, ctx),
               ...moveBadge(4, { reused: true }),
-              numLabel('covl', f.midX, f.y1 + 12, d.cov, {
-                cls: 'lab-big lab-mid lab-gold', d: 2, pre: 'cov = ',
+              numLabel('covl', f.x1 - 4, f.y1 + 12, d.cov, {
+                cls: 'lab-big lab-end lab-gold', d: 2, pre: 'cov = ',
                 suf: s.yUnit === 'sec' ? ' min·sec' : ' min·min',
               }),
             ];

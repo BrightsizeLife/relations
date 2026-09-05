@@ -525,7 +525,7 @@ function lossCurve(s, phase) {
     [0, 0.5, 1, 1.5].map(v => label('cxt' + v, c.sx(v), c.y0 + 16, v.toFixed(1), { cls: 'ax-tick' })),
     phase >= 4 ? fnPath(c, L, { key: 'lc', cls: 'curve' }) : null,
     phase >= 4 ? path('bl', [[c.sx(bestB), c.y0], [c.sx(bestB), c.sy(L(bestB))]], { cls: 'rule rule-faint rule-dash' }) : null,
-    phase >= 4 ? label('bll', c.sx(bestB), c.y0 + 30, 'least squares', { cls: 'lab-sm lab-mid lab-green' }) : null,
+    phase >= 4 ? label('bll', c.sx(bestB), c.y0 - 10, 'least squares', { cls: 'lab-sm lab-mid lab-green' }) : null,
     { key: 'cd', tag: 'circle', cls: 'pt pt-cyan', attrs: { cx: c.sx(b), cy: c.sy(L(b)), r: 7.5 } },
     numLabel('cdl', c.sx(b), c.sy(L(b)) - 18, L(b), { cls: 'lab lab-mid lab-warm', d: 3 }),
   ];

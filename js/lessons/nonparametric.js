@@ -447,7 +447,7 @@ function vr(s, phase) {
       attrs: { cx: f.x0 + ((v - 0.5) / d.length) * (f.x1 - f.x0), cy: y2, r: 7 },
       tip: `patient ${i + 1}: rank <b>${v}</b> of ${d.length}`,
     })),
-    ...r.map((v, i) => label(`rl-${i}`, f.x0 + ((v - 0.5) / d.length) * (f.x1 - f.x0), y2 + 22,
+    ...[...new Set(r)].map(v => label(`rl-${v}`, f.x0 + ((v - 0.5) / d.length) * (f.x1 - f.x0), y2 + 22,
       String(v), { cls: 'lab-sm lab-mid', dur: 260 })),
     ...d.map((v, i) => path(`dr-${i}`, [
       [f.sx(clamp(v, lo, hi)), y1 + ((i % 3) - 1) * 13 + 8],

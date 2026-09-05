@@ -3,7 +3,7 @@
    renderer in dom.js can tween them. Rescale an axis and the ticks slide.
    ───────────────────────────────────────────────────────────────────────────── */
 
-import { ticks, tickLabel, clamp, S } from './dom.js';
+import { ticks, tickLabel, clamp, caps, S } from './dom.js';
 
 /* ── shared <defs> ────────────────────────────────────────────────────────── */
 
@@ -141,7 +141,9 @@ export function axes(f, {
   if (yLabel) out.push({
     key: prefix + '-ylab', tag: 'text', cls: 'ax-label', dur,
     attrs: { x: 0, y: 0 },
-    set: { transform: `translate(14 ${(f.y0 + f.y1) / 2}) rotate(-90)` },
+    // sit in this panel's own gutter, not the page's — two panels side by side
+    // used to stack both of their y-labels at x = 14
+    set: { transform: `translate(${Math.max(14, f.x0 - 44)} ${(f.y0 + f.y1) / 2}) rotate(-90)` },
     text: caps(yLabel),
   });
   return out;

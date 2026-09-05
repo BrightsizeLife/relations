@@ -188,8 +188,8 @@ export default {
               { key: 'eu', tag: 'circle', cls: 'pt pt-gold', dur: 240, attrs: { cx: f.sx(W + ev(s)), cy: f.sy(eu), r: 7 } },
               hLine(f, eu, { key: 'euline', cls: 'rule-gold rule-dash', dur: 240 }),
               vLine(f, ce, { key: 'ceLine', cls: 'rule-x', dur: 240 }),
-              label('cel', f.sx(ce), f.y0 + 20, `certainty equivalent ${ce.toFixed(0)}`, { cls: 'lab-sm lab-mid lab-cyan', dur: 240 }),
-              label('evl', f.sx(W + ev(s)), f.y0 + 38, `expected value ${(W + ev(s)).toFixed(0)}`, { cls: 'lab-sm lab-mid lab-gold', dur: 240 }),
+              label('cel', f.sx(ce), f.y0 - 12, `certainty equivalent ${ce.toFixed(0)}`, { cls: 'lab-sm lab-mid lab-cyan', dur: 240 }),
+              label('evl', f.sx(W + ev(s)), f.y0 - 32, `expected value ${(W + ev(s)).toFixed(0)}`, { cls: 'lab-sm lab-mid lab-gold', dur: 240 }),
               label('n', 376, f.y1 + 6,
                 eta < 0.05 ? 'a straight line — you are indifferent to risk'
                   : `you would pay ${((W + ev(s)) - ce).toFixed(0)} to avoid this gamble`,

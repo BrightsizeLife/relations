@@ -665,7 +665,7 @@ function season(s, phase) {
       numLabel('r2', f.x1 - 4, f.y1 - 8, F.r2 * 100, { cls: 'lab lab-end lab-cyan', d: 1, suf: '% explained' }));
   }
   if (phase >= 2) {
-    const g = frame({ w: 720, h: 540, l: 68, r: 40, t: 300, b: 70 });
+    const g = frame({ w: 720, h: 540, l: 68, r: 40, t: 318, b: 70 });
     g.setX(0, 47); g.setY(-1.25, 1.25);
     out.push(
       { key: 'gx', tag: 'line', cls: 'ax-line', attrs: { x1: g.x0, y1: g.sy(0), x2: g.x1, y2: g.sy(0) } },

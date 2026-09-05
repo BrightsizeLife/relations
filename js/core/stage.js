@@ -49,7 +49,10 @@ export function mountLesson(root, lesson, { onNav } = {}) {
 
   const readoutStrip = h('div', { class: 'cs-readouts' });
   const controlDeck = h('div', { class: 'cs-controls' });
-  const tip = h('div', { class: 'cs-tip', role: 'tooltip' });
+  // no role="tooltip": the element is empty until something is hovered, and an
+  // unnamed tooltip in the tree is worse than no tooltip. aria-describedby,
+  // which is what actually carries this to a screen reader, needs no role.
+  const tip = h('div', { class: 'cs-tip' });
 
   const stageCol = h('div', { class: 'cs-stage' },
     h('div', { class: 'cs-canvas-wrap' }, svg, tip),
@@ -395,8 +398,9 @@ export function mountLesson(root, lesson, { onNav } = {}) {
   svg.addEventListener('pointerleave', hideTip);
 
   // one popover for both formula terms and readouts, anywhere in the lesson
-  const pop = h('div', { class: 'cs-pop', role: 'tooltip' });
+  const pop = h('div', { class: 'cs-pop', id: `${lesson.meta.id}-pop` });
   root.appendChild(pop);
+  let described = null;
   function showPop(el) {
     const key = el.getAttribute('data-term');
     if (key) {
@@ -411,6 +415,11 @@ export function mountLesson(root, lesson, { onNav } = {}) {
       pop.classList.remove('is-term');
     }
     pop.classList.add('show');
+    // point the trigger at the popover only while it is open, so a screen
+    // reader reads the definition when focus lands on a glossary term
+    if (described) described.removeAttribute('aria-describedby');
+    el.setAttribute('aria-describedby', pop.id);
+    described = el;
     const r = el.getBoundingClientRect();
     const rr = root.getBoundingClientRect();
     let left = r.left - rr.left + r.width / 2 - pop.offsetWidth / 2;
@@ -418,7 +427,10 @@ export function mountLesson(root, lesson, { onNav } = {}) {
     pop.style.left = left + 'px';
     pop.style.top = (r.top - rr.top - pop.offsetHeight - 10) + 'px';
   }
-  const hidePop = () => pop.classList.remove('show');
+  const hidePop = () => {
+    pop.classList.remove('show');
+    if (described) { described.removeAttribute('aria-describedby'); described = null; }
+  };
 
   function setHighlight(name) {
     sceneG.classList.toggle('has-hl', !!name);

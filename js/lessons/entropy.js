@@ -173,7 +173,11 @@ export default {
               { key: 'pt', tag: 'circle', cls: 'pt pt-gold', dur: 180, attrs: { cx: f.sx(p), cy: f.sy(h2), r: 8 } },
               label('l1', f.sx(0.5), f.y1 + 12, 'a fair coin — 1 full bit', { cls: 'lab lab-mid lab-gold' }),
               label('l2', f.sx(0.02), f.y0 - 14, 'a rigged coin tells you almost nothing', { cls: 'lab-sm' }),
-              numLabel('v', f.sx(p), f.sy(h2) - 16, h2, { cls: 'lab-big lab-mid lab-gold', d: 3, suf: ' bits', dur: 180 }),
+              // beside the dot, not above it: at p = ½ the dot is at the peak and
+              // the reading landed on top of the caption there
+              numLabel('v', f.sx(p) + (p > 0.6 ? -14 : 14), f.sy(h2) + 5, h2, {
+                cls: 'lab-big lab-gold' + (p > 0.6 ? ' lab-end' : ''), d: 3, suf: ' bits', dur: 180,
+              }),
             ];
           },
         },
@@ -266,7 +270,8 @@ export default {
               { key: 'p1', tag: 'circle', cls: 'pt pt-green', dur: 180, attrs: { cx: f.sx(p), cy: f.sy(Math.min(5, -Math.log(p))), r: 8 } },
               { key: 'p0', tag: 'circle', cls: 'pt pt-warm', dur: 180, attrs: { cx: f.sx(1 - p), cy: f.sy(Math.min(5, -Math.log(1 - p))), r: 8 } },
               label('l1', f.sx(p) + 12, f.sy(Math.min(5, -Math.log(p))) - 10, 'if the truth was 1', { cls: 'lab-sm lab-green', dur: 180 }),
-              label('l0', f.sx(1 - p) + 12, f.sy(Math.min(5, -Math.log(1 - p))) - 10, 'if the truth was 0', { cls: 'lab-sm lab-warm', dur: 180 }),
+              // one above, one below — at p = ½ both points are the same point
+              label('l0', f.sx(1 - p) + 12, f.sy(Math.min(5, -Math.log(1 - p))) + 20, 'if the truth was 0', { cls: 'lab-sm lab-warm', dur: 180 }),
               label('n', f.midX, f.y1 + 10, 'this curve is the log-loss, the deviance, and the cross-entropy', { cls: 'lab lab-mid lab-gold' }),
             ];
           },

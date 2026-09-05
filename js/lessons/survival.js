@@ -427,7 +427,8 @@ function scene3(upTo) {
       delay: si * 120,
     }));
     const last = pts[pts.length - 1];
-    out.push(label(`s3-l-${s.key}`, f.sx(last[0]) + 12, f.sy(last[1]) + 4, s.lab, { cls: s.labCls, delay: si * 120 }));
+    out.push(label(`s3-l-${s.key}`, f.sx(last[0]) + 12, f.sy(last[1]) + 4 + (si === 2 ? 14 : si === 1 ? -8 : 0),
+      s.lab, { cls: s.labCls, delay: si * 120 }));
   });
   return out;
 }
@@ -480,11 +481,14 @@ function scene5(upTo) {
     });
   });
   WARD.filter(r => !r.event && (!last || r.t <= last.t)).forEach(r => {
-    out.push(label(`s5-cens-${r.id}`, f.sx(r.t), f.sy(survivalAt(shown, r.t)) - 8, '|', {
-      cls: 'lab lab-cold lab-mid',
-      tip: `${r.name} censored at ${r.t.toFixed(1)} — no step, but the risk set is one smaller from here on`,
-    }));
+    const y = f.sy(survivalAt(shown, r.t));
+    out.push({
+      key: `s5-cens-${r.id}`, tag: 'line', cls: 'stick stick-neg',
+      attrs: { x1: f.sx(r.t), y1: y - 9, x2: f.sx(r.t), y2: y + 9 },
+      tip: `${r.name} censored at ${r.t.toFixed(1)} — no step down, but the risk set is one smaller from here on`,
+    });
   });
+  if (shown.length) out.push(label('s5-key', f.x0 + 6, f.y1 + 4, '│ censored — the curve does not step', { cls: 'lab-sm lab-cold' }));
   if (last) {
     out.push(numLabel('s5-s', f.sx(last.t) + 10, f.sy(last.s) - 8, last.s, { cls: 'lab-big lab-gold', d: 3 }));
     out.push(label('s5-frac', f.x1 - 6, f.y1 + 6, `${last.d} / ${last.n} at t = ${last.t.toFixed(1)}`, { cls: 'lab-sm lab-end lab-cyan' }));
@@ -584,38 +588,55 @@ function scene8() {
 }
 
 function scene9(stage) {
-  const f = frame({ w: 720, h: 500 });
   const at = 8;
-  const risk = [...ARM[0], ...ARM[1]].filter(r => r.t >= at).slice(0, 14);
-  const failed = risk.find(r => r.group === 1) || risk[0];
+  // take from both arms alternately — a risk set that is all one group would
+  // make the question the picture is asking impossible to see
+  const inA = ARM[0].filter(r => r.t >= at), inB = ARM[1].filter(r => r.t >= at);
+  const risk = [];
+  for (let i = 0; i < 7; i++) { if (inA[i]) risk.push(inA[i]); if (inB[i]) risk.push(inB[i]); }
+  const failed = risk.find(r => r.group === 1 && r.event) || risk.find(r => r.group === 1) || risk[0];
   const out = [
-    label('s9-t', 360, 46, `the risk set an instant before t = ${at}`, { cls: 'lab lab-mid lab-gold' }),
+    label('s9-t', 360, 44, `the risk set an instant before t = ${at} months`, { cls: 'lab lab-mid lab-gold' }),
+    label('s9-t2', 360, 62, `${inA.length} still going in arm A · ${inB.length} in arm B`, { cls: 'lab-sm lab-mid' }),
   ];
   risk.forEach((r, i) => {
-    const cx = 74 + (i % 7) * 96;
-    const cy = 110 + Math.floor(i / 7) * 78;
+    const cx = 76 + (i % 7) * 95;
+    const cy = 116 + Math.floor(i / 7) * 76;
     const isIt = stage >= 1 && r === failed;
     out.push({
       key: `s9-p${i}`, tag: 'circle',
       cls: isIt ? 'pt pt-warm' : r.group ? 'pt pt-cold' : 'pt',
-      attrs: { cx, cy, r: isIt ? 17 : 12 }, delay: i * 40,
-      opacity: stage >= 1 && !isIt ? 0.42 : 1,
-      tip: `arm ${r.group ? 'B' : 'A'}, still at risk`,
+      attrs: { cx, cy, r: isIt ? 16 : 11 }, delay: i * 40,
+      opacity: stage >= 1 && !isIt ? 0.35 : 1,
+      tip: `arm ${r.group ? 'B' : 'A'}, still event-free at ${at} months`,
     });
-    out.push(label(`s9-l${i}`, cx, cy + 30, r.group ? 'B' : 'A', { cls: 'lab-sm lab-mid', delay: i * 40 }));
+    out.push(label(`s9-l${i}`, cx, cy + 28, r.group ? 'B' : 'A', {
+      cls: `lab-sm lab-mid${isIt ? ' lab-warm' : ''}`, delay: i * 40,
+      opacity: stage >= 1 && !isIt ? 0.4 : 1,
+    }));
   });
   if (stage >= 1) {
-    out.push(label('s9-q', 360, 300, 'given that somebody failed right now,', { cls: 'lab lab-mid' }));
-    out.push(label('s9-q2', 360, 322, 'what is the chance it was this one?', { cls: 'lab-big lab-mid lab-warm' }));
+    out.push(label('s9-q', 360, 288, 'given that somebody failed right now,', { cls: 'lab lab-mid' }));
+    out.push(label('s9-q2', 360, 312, 'what is the chance it was this one?', { cls: 'lab-big lab-mid lab-warm' }));
   }
   if (stage >= 2) {
-    out.push(rect('s9-box', 96, 348, 528, 108, { cls: 'plate' }));
-    out.push(label('s9-num', 360, 384, 'h₀(t) · e^(βx_i)', { cls: 'lab-big lab-mid lab-gold' }));
-    out.push({ key: 's9-bar', tag: 'line', cls: 'rule rule-gold', attrs: { x1: 176, y1: 396, x2: 544, y2: 396 } });
-    out.push(label('s9-den', 360, 424, '∑ over the risk set of  h₀(t) · e^(βx_j)', { cls: 'lab-big lab-mid lab-gold' }));
-    out.push(label('s9-cancel', 360, 448, 'the same h₀(t) top and bottom — it divides out', { cls: 'lab-sm lab-mid lab-green' }));
-    out.push({ key: 's9-x1', tag: 'line', cls: 'stick stick-neg', attrs: { x1: 292, y1: 372, x2: 348, y2: 392 } });
-    out.push({ key: 's9-x2', tag: 'line', cls: 'stick stick-neg', attrs: { x1: 232, y1: 412, x2: 288, y2: 432 } });
+    out.push(rect('s9-box', 70, 336, 580, 142, { cls: 'plate' }));
+    // the two h₀(t) are drawn as their own labels so they can be greyed out
+    // exactly where they sit, rather than struck through at a guessed position
+    // struck through, not painted over: you have to be able to read what it is
+    // that cancels
+    out.push(label('s9-h1', 268, 372, 'h₀(t)', { cls: 'lab-big lab-mid', opacity: 0.5 }));
+    out.push({ key: 's9-h1x', tag: 'line', cls: 'stick stick-neg',
+      attrs: { x1: 236, y1: 380, x2: 300, y2: 358 } });
+    out.push(label('s9-n1', 380, 372, '·  e^(β xᵢ)', { cls: 'lab-big lab-mid lab-gold' }));
+    out.push({ key: 's9-bar', tag: 'line', cls: 'rule rule-gold', attrs: { x1: 150, y1: 388, x2: 570, y2: 388 } });
+    out.push(label('s9-s', 176, 412, '∑ over the risk set of', { cls: 'lab lab-mid' }));
+    out.push(label('s9-h2', 330, 412, 'h₀(t)', { cls: 'lab-big lab-mid', opacity: 0.5 }));
+    out.push({ key: 's9-h2x', tag: 'line', cls: 'stick stick-neg',
+      attrs: { x1: 298, y1: 420, x2: 362, y2: 398 } });
+    out.push(label('s9-n2', 442, 412, '·  e^(β xⱼ)', { cls: 'lab-big lab-mid lab-gold' }));
+    out.push(label('s9-cancel', 360, 448, 'the same h₀(t) multiplies every term above and below', { cls: 'lab-sm lab-mid lab-green' }));
+    out.push(label('s9-cancel2', 360, 466, 'so it divides out, and is never estimated at all', { cls: 'lab-sm lab-mid lab-green' }));
   }
   return out;
 }

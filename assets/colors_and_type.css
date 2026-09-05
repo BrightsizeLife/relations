@@ -44,6 +44,9 @@
   --cs-text-prose:   #d4d4d4;   /* essay body — slightly dimmer for long reads */
   --cs-muted:        #8a8680;   /* secondary text, labels */
   --cs-dim:          #44413b;   /* decorative, dividers, dashes */
+  /* --cs-dim is for rules and decoration. Anything a reader has to READ, however
+     quietly, uses this instead: it clears 4.5:1 where --cs-dim manages 1.9 */
+  --cs-faint:        #847f74;
 
   /* ── Borders ── */
   --cs-border:       rgba(255,255,255,0.10); /* default border */
@@ -213,6 +216,7 @@
   --cs-text-prose:   #2c2922;
   --cs-muted:        #5c584f;   /* 6.4:1 on the ground — still readable at 10px */
   --cs-dim:          #b4aea1;
+  --cs-faint:        #726d65;
 
   --cs-border:       rgba(0,0,0,0.16);
   --cs-border-dim:   rgba(0,0,0,0.07);
@@ -264,6 +268,7 @@
   --cs-text-prose:   #ffffff;
   --cs-muted:        #d6d6d6;   /* 15.9:1 — "muted" here means quieter, not fainter */
   --cs-dim:          #8f8f8f;
+  --cs-faint:        #d6d6d6;
 
   --cs-border:       rgba(255,255,255,0.62);
   --cs-border-dim:   rgba(255,255,255,0.34);
@@ -408,7 +413,7 @@
 .cs-bracket-cta:hover { text-decoration: underline; }
 
 .cs-dash {
-  color: var(--cs-dim);
+  color: var(--cs-faint);
   user-select: none;
   flex-shrink: 0;
 }

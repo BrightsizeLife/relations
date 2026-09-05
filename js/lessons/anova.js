@@ -234,7 +234,7 @@ export default {
               { key: 'fv', tag: 'line', cls: 'rule-gold', dur: 260, attrs: { x1: f.sx(a.F), y1: f.y0, x2: f.sx(a.F), y2: f.y1 } },
               numLabel('fl', f.sx(a.F), f.y1 + 6, a.F, { cls: 'lab-big lab-gold lab-mid', d: 2, pre: 'F = ', dur: 260 }),
               label('pl', f.midX, f.y1 + 26, `p = ${st.fmtP(a.p)}`, { cls: 'lab lab-mid lab-gold', dur: 260 }),
-              label('one', f.sx(1), f.y0 + 22, 'F = 1 · what pure noise gives you', { cls: 'lab-sm lab-mid' }),
+              label('one', f.sx(1), f.y0 + 36, 'F = 1 · what pure noise gives you', { cls: 'lab-sm lab-mid' }),
             ];
           },
         },

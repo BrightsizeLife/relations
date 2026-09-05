@@ -446,9 +446,9 @@ function lagScene(s, phase) {
         key: 'sp' + i, tag: 'circle', cls: 'pt pt-cyan',
         attrs: { cx: g.sx(v), cy: g.sy(a[i]), r: 2.8 }, opacity: 0.55,
       })),
-      numLabel('rv', 430, 388, rr, { cls: 'lab-big lab-gold', d: 4, pre: 'r = ' }),
-      label('rl', 430, 410, `the autocorrelation at lag ${k}`, { cls: 'lab-sm' }),
-      numLabel('nv', 430, 440, y.length - k, { cls: 'lab lab-muted', d: 0, pre: 'from ', suf: ' pairs' }));
+      numLabel('rv', 430, 418, rr, { cls: 'lab-big lab-gold', d: 4, pre: 'r = ' }),
+      label('rl', 430, 440, `the autocorrelation at lag ${k}`, { cls: 'lab-sm' }),
+      numLabel('nv', 430, 470, y.length - k, { cls: 'lab lab-muted', d: 0, pre: 'from ', suf: ' pairs' }));
   }
   return out;
 }
@@ -753,12 +753,12 @@ function forecast(s, phase) {
   }
   if (phase >= 2) out.push(
     path('fc', [[f.sx(FC.cut - 1), f.sy(FC.last)], [f.sx(end), f.sy(FC.last)]], { cls: 'curve curve-fit' }),
-    label('fl', f.sx(end) + 4, f.sy(FC.last) - 8, 'the forecast', { cls: 'lab-sm lab-green' }));
+    label('fl', f.sx(end) + 4, f.sy(FC.last) + 16, 'the forecast', { cls: 'lab-sm lab-green' }));
   if (phase >= 4) out.push(
     path('fu', FC.future.map((v, i) => [f.sx(FC.cut + i), f.sy(v)]), {
       cls: 'curve', set: { stroke: 'var(--cs-data-warm)', 'stroke-width': 1.6 },
     }),
-    label('ful', f.x1 - 4, f.y1 - 8, 'what actually happened', { cls: 'lab-sm lab-end lab-warm' }));
+    label('ful', f.x1 - 4, f.y1 - 22, 'what actually happened', { cls: 'lab-sm lab-end lab-warm' }));
 
   const px = 534;
   out.push(

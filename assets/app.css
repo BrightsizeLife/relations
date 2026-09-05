@@ -112,7 +112,7 @@ body {
 .cs-tab.active {
   color: var(--tab-accent);
   border-color: var(--tab-accent);
-  background: color-mix(in srgb, var(--tab-accent) 12%, transparent);
+  background: color-mix(in srgb, var(--tab-accent) 8%, transparent);
 }
 .cs-tab.wip::after {
   content: '';
@@ -120,13 +120,13 @@ body {
   width: 4px; height: 4px; border-radius: 99px;
   background: var(--cs-amber);
 }
-.cs-tab-sep { flex: 0 0 auto; color: var(--cs-dim); padding: 0 4px; user-select: none; }
+.cs-tab-sep { flex: 0 0 auto; color: var(--cs-faint); padding: 0 4px; user-select: none; }
 .cs-tabrow-sub .cs-tab-glabel {
   flex: 0 0 auto;
   font-size: 0.58rem;
   letter-spacing: var(--cs-tracking-widest);
   text-transform: uppercase;
-  color: var(--cs-dim);
+  color: var(--cs-faint);
   padding: 0 4px 0 12px;
   white-space: nowrap;
   user-select: none;
@@ -332,21 +332,22 @@ body {
   padding: 10px 2px 0;
 }
 .cs-beat-dots { display: flex; gap: 5px; flex: 1; align-items: center; }
+/* the mark is 4px because a thick one would dominate the drawing; the button
+   is 24px, which is the size a finger actually is. The bar is drawn by the
+   pseudo-element so the hit area and the graphic can disagree. */
 .cs-beat-dot {
-  width: 100%; max-width: 46px; height: 4px;
-  border: none; border-radius: 99px;
-  background: color-mix(in srgb, var(--cs-text) 18%, var(--cs-bg)); cursor: pointer; padding: 0;
+  width: 100%; max-width: 46px; height: 24px;
+  border: none; background: transparent; cursor: pointer; padding: 0;
+  display: flex; align-items: center;
+}
+.cs-beat-dot::after {
+  content: ''; display: block; width: 100%; height: 4px; border-radius: 99px;
+  background: color-mix(in srgb, var(--cs-text) 18%, var(--cs-bg));
   transition: background .25s;
-  position: relative;
 }
-/* the bar is 4px because a thick one would dominate the drawing; the thing you
-   press is 24px, which is the size a finger actually is */
-.cs-beat-dot::before {
-  content: ''; position: absolute; inset: -11px 0;
-}
-.cs-beat-dot.done { background: color-mix(in srgb, var(--cs-text) 32%, var(--cs-bg)); }
-.cs-beat-dot.active { background: var(--sc-1); }
-.cs-beat-dot:hover { background: var(--cs-muted); }
+.cs-beat-dot.done::after { background: color-mix(in srgb, var(--cs-text) 32%, var(--cs-bg)); }
+.cs-beat-dot.active::after { background: var(--sc-1); }
+.cs-beat-dot:hover::after { background: var(--cs-muted); }
 .cs-mini-btn {
   font-family: var(--cs-font-mono);
   font-size: 0.7rem;
@@ -408,12 +409,14 @@ body {
   font-variant-numeric: tabular-nums;
   margin-top: 2px;
 }
-.tone-warm  { color: var(--cs-data-warm); }
-.tone-cold  { color: var(--cs-data-cold); }
-.tone-gold  { color: var(--cs-data-gold); }
-.tone-green { color: var(--cs-data-green); }
-.tone-cyan  { color: var(--cs-cyan); }
-.tone-purple{ color: var(--cs-purple); }
+/* a readout tinted "warm" has to be the same colour as the mark it is
+   describing, or the tint is decoration rather than a pointer */
+.tone-warm  { color: var(--sc-1); }
+.tone-cold  { color: var(--sc-2); }
+.tone-gold  { color: var(--sc-1); }
+.tone-green { color: var(--sc-5); }
+.tone-cyan  { color: var(--sc-3); }
+.tone-purple{ color: var(--sc-4); }
 .tone-muted { color: var(--cs-muted); }
 
 @keyframes csFlash {
@@ -473,33 +476,42 @@ body {
 .cs-steps-wrap { display: grid; grid-template-columns: 16px minmax(0,1fr); gap: var(--cs-space-4); }
 .cs-rail {
   position: sticky; top: 62px; height: min(70vh, 520px);
-  display: flex; flex-direction: column; gap: 6px; justify-content: center;
+  display: flex; flex-direction: column; gap: 0; justify-content: center;
   padding-top: var(--cs-space-4);
 }
 .cs-rail-dot {
-  width: 7px; height: 7px; border-radius: 99px; padding: 0;
-  border: 1px solid var(--cs-border-data); background: transparent; cursor: pointer;
-  transition: all .2s; flex: 0 0 auto;
-  position: relative;
+  width: 24px; height: 24px; padding: 0; border: none; background: transparent;
+  cursor: pointer; flex: 0 0 auto;
+  display: flex; align-items: center; justify-content: center;
 }
-.cs-rail-dot::before { content: ''; position: absolute; inset: -9px; }
-.cs-rail-dot.done { background: var(--cs-muted); border-color: var(--cs-muted); }
-.cs-rail-dot.active { background: var(--sc-1); border-color: var(--sc-1); transform: scale(1.5); }
-.cs-rail-dot:hover { border-color: var(--cs-text); }
+.cs-rail-dot::after {
+  content: ''; width: 7px; height: 7px; border-radius: 99px;
+  border: 1px solid var(--cs-border-data); background: transparent;
+  transition: all .2s;
+}
+.cs-rail-dot.done::after { background: var(--cs-muted); border-color: var(--cs-muted); }
+.cs-rail-dot.active::after { background: var(--sc-1); border-color: var(--sc-1); transform: scale(1.5); }
+.cs-rail-dot:hover::after { border-color: var(--cs-text); }
 
 .cs-step {
   min-height: 66vh;
   padding: var(--cs-space-8) 0 var(--cs-space-12);
-  opacity: .34;
-  transition: opacity .4s;
   border-top: 1px solid transparent;
 }
-.cs-step.active { opacity: 1; }
+/* The step you are not on reads quieter. It used to do that with opacity: .34,
+   which put the prose at 2.6:1 — a scrollytelling effect applied to something
+   people are supposed to be able to read, and it dragged everything near the
+   contrast floor straight through it. A colour shift says the same thing and
+   every word still clears 4.5:1. */
+.cs-step .cs-step-title,
+.cs-step .cs-step-prose { transition: color .4s; }
+.cs-step:not(.active) .cs-step-title,
+.cs-step:not(.active) .cs-step-prose { color: var(--cs-muted); }
 .cs-step-num {
-  font-size: 0.62rem; letter-spacing: .2em; color: var(--cs-dim);
+  font-size: 0.62rem; letter-spacing: .2em; color: var(--cs-faint);
   margin-bottom: var(--cs-space-2);
 }
-.cs-step.active .cs-step-num { color: var(--cs-data-warm); }
+.cs-step.active .cs-step-num { color: var(--sc-1); }
 .cs-step-title {
   font-family: var(--cs-font-mono);
   font-size: 1.28rem; font-weight: 700; line-height: 1.25;
@@ -558,7 +570,7 @@ body {
   text-align: center; color: var(--cs-muted);
   font-size: var(--cs-text-data-sm);
 }
-.cs-step-end-mark { color: var(--cs-dim); letter-spacing: .4em; margin-bottom: var(--cs-space-4); }
+.cs-step-end-mark { color: var(--cs-faint); letter-spacing: .4em; margin-bottom: var(--cs-space-4); }
 .cs-step-end .cs-data-cta { margin-top: var(--cs-space-6); }
 
 /* ══ formulas ═══════════════════════════════════════════════════════════════ */
@@ -693,7 +705,7 @@ body {
 .cs-badge-live { color: var(--cs-data-green); }
 .cs-badge-wip  { color: var(--cs-amber); }
 .cs-badge-soon { color: var(--cs-muted); }
-.cs-card-steps { font-size: .6rem; color: var(--cs-dim); margin-left: auto; }
+.cs-card-steps { font-size: .6rem; color: var(--cs-faint); margin-left: auto; }
 
 .cs-legend { display: flex; gap: 18px 22px; flex-wrap: wrap; margin: var(--cs-space-6) 0; font-size: .68rem; color: var(--cs-muted); }
 .cs-legend span { display: inline-flex; align-items: center; gap: 6px; }
@@ -719,9 +731,9 @@ body {
 .cs-foot {
   border-top: 1px solid var(--cs-border-dark);
   padding: var(--cs-space-8) var(--cs-space-6);
-  text-align: center; color: var(--cs-dim); font-size: .68rem; line-height: 1.8;
+  text-align: center; color: var(--cs-faint); font-size: .68rem; line-height: 1.8;
 }
-.cs-foot a { color: var(--cs-muted); text-decoration: none; }
+.cs-foot a { color: var(--cs-link); text-decoration: underline; }
 .cs-foot a:hover { color: var(--cs-text); text-decoration: underline; }
 
 /* ══ WIP placeholder ════════════════════════════════════════════════════════ */
@@ -755,7 +767,9 @@ body {
   .cs-beat-note { display: none; }
   .cs-rail { display: none; }
   .cs-steps-wrap { grid-template-columns: minmax(0,1fr); }
-  .cs-step { min-height: auto; padding: var(--cs-space-8) 0; opacity: 1; }
+  .cs-step { min-height: auto; padding: var(--cs-space-8) 0; }
+  .cs-step:not(.active) .cs-step-title,
+  .cs-step:not(.active) .cs-step-prose { color: inherit; }
   .cs-step-title { font-size: 1.15rem; }
 }
 
@@ -789,13 +803,13 @@ body {
   font-size: 0.95rem; font-weight: 700; color: var(--track-accent);
   text-transform: lowercase; letter-spacing: -.01em;
 }
-.cs-track-count { font-size: .6rem; color: var(--cs-dim); letter-spacing: .1em; text-transform: uppercase; }
+.cs-track-count { font-size: .6rem; color: var(--cs-faint); letter-spacing: .1em; text-transform: uppercase; }
 .cs-track-note {
   font-family: var(--cs-font-prose); font-size: .95rem; line-height: 1.55;
   color: var(--cs-text-prose); margin: 6px 0 12px;
 }
 .cs-track-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
-.cs-track-arrow { color: var(--cs-dim); font-size: .7rem; }
+.cs-track-arrow { color: var(--cs-faint); font-size: .7rem; }
 .cs-track-step {
   font-family: var(--cs-font-mono); font-size: .7rem;
   background: color-mix(in srgb, var(--cs-text) 6%, transparent);

@@ -671,7 +671,7 @@ function tree(s, upTo, showCut) {
     label('sl', f.x0, f.y1 - 10, `${P.length} points`, { cls: 'lab-sm' }),
     { key: 'dx', tag: 'line', cls: 'ax-line', attrs: { x1: d.x0, y1: d.y0, x2: d.x1, y2: d.y0 } },
     { key: 'dy', tag: 'line', cls: 'ax-line', attrs: { x1: d.x0, y1: d.y0, x2: d.x0, y2: d.y1 } },
-    { key: 'dyl', tag: 'text', cls: 'ax-label', attrs: { x: 0, y: 0 }, set: { transform: `translate(${d.x0 - 22} ${(d.y0 + d.y1) / 2}) rotate(-90)` }, text: 'distance at merge' },
+    { key: 'dyl', tag: 'text', cls: 'ax-label', attrs: { x: 0, y: 0 }, set: { transform: `translate(${Math.max(14, d.x0 - 44)} ${(d.y0 + d.y1) / 2}) rotate(-90)` }, text: 'distance at merge' },
     label('dl', (d.x0 + d.x1) / 2, d.y0 + 26, `${s.link} linkage`, { cls: 'ax-label' }),
   ];
 

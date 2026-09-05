@@ -505,7 +505,7 @@ function berkson(frac, showCut) {
       opacity: frac >= 0.99 ? 0.4 : keep.has(i) ? 0.65 : 0.09,
     })),
     showCut ? path('cut', [[f.sx(-3.4), f.sy(cut + 3.4)], [f.sx(3.4), f.sy(cut - 3.4)]], { cls: 'curve curve-fit curve-dash' }) : null,
-    showCut ? label('cutl', f.sx(1.9), f.sy(cut - 1.4), 'admitted above here', { cls: 'lab-sm lab-green' }) : null,
+    showCut ? label('cutl', f.sx(1.9), f.sy(cut - 1.4), 'admitted above here', { cls: 'lab-sm lab-end lab-green' }) : null,
     frac < 0.99 && keep.size > 20 && !showCut ? (() => {
       const xs = [...keep].map(i => BSIM.A[i]), ys = [...keep].map(i => BSIM.B[i]);
       const m = st.linreg(xs, ys);

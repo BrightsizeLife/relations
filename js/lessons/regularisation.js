@@ -56,7 +56,7 @@ const fLam = t('λ', { explain: 'The price of a coefficient. At zero you are bac
 const fL2 = t(`${sumOver(`${sub('β', 'j')}${sup('', '2')}`, { from: 'j=1', to: 'p' })}`,
   { explain: 'Ridge: the sum of squares. Cheap near zero, brutal far away — so it shrinks the big ones hard and never quite kills the small ones.', tone: 'cyan', link: 'l2' });
 const fL1 = t(`${sumOver(`|${sub('β', 'j')}|`, { from: 'j=1', to: 'p' })}`,
-  { explain: 'Lasso: the sum of absolute values. The slope of the cost is the same all the way in to zero, which is exactly why coefficients arrive there.', tone: 'purple', link: 'l1' });
+  { explain: 'Lasso: the sum of absolute values. The slope of the cost is the same all the way in to zero, which is exactly why coefficients arrive there.', tone: 'cold', link: 'l1' });
 
 const RIDGE_F = formula(`${fRSS} ${plus} ${fLam} ${fL2}`, { caption: 'ridge · squared penalty' });
 const LASSO_F = formula(`${fRSS} ${plus} ${fLam} ${fL1}`, { caption: 'lasso · absolute penalty' });
@@ -134,7 +134,7 @@ export default {
       readouts: [
         { key: 'z', label: 'unpenalised coefficient', tone: 'muted', get: s => +s.z, d: 2 },
         { key: 'r', label: 'ridge keeps', tone: 'cyan', get: s => (+s.z) / (1 + 0.8), d: 3 },
-        { key: 'l', label: 'lasso keeps', tone: 'purple', get: s => soft(+s.z, 0.8), d: 3 },
+        { key: 'l', label: 'lasso keeps', tone: 'cold', get: s => soft(+s.z, 0.8), d: 3 },
       ],
     },
 
@@ -167,7 +167,7 @@ export default {
       scene: s => scene5(s.kind, !!s.showTrue),
       readouts: [
         { key: 'a', label: 'non-zero at λ = 0.02', tone: 'cyan', get: s => nzAt(s.kind, 0.02), d: 0 },
-        { key: 'b', label: 'non-zero at λ = 0.35', tone: 'purple', get: s => nzAt(s.kind, 0.35), d: 0 },
+        { key: 'b', label: 'non-zero at λ = 0.35', tone: 'cold', get: s => nzAt(s.kind, 0.35), d: 0 },
         { key: 'c', label: 'columns that really matter', tone: 'green', get: () => 4, d: 0 },
       ],
     },
@@ -257,7 +257,7 @@ export default {
       scene: () => scene10(),
       readouts: [
         { key: 'a', label: 'ridge · cv error', tone: 'cyan', get: () => CV.ridge.best.mse, d: 3 },
-        { key: 'b', label: 'lasso · cv error', tone: 'purple', get: () => CV.lasso.best.mse, d: 3 },
+        { key: 'b', label: 'lasso · cv error', tone: 'cold', get: () => CV.lasso.best.mse, d: 3 },
         { key: 'c', label: 'the truth here is sparse', tone: 'green', wide: true, get: () => '4 of 20 columns' },
       ],
     },
@@ -335,17 +335,17 @@ function scene3(z) {
     axes(f, { xLabel: 'what least squares wanted', yLabel: 'what the penalty leaves', xN: 7, yN: 7 }),
     path('s3-id', [[f.sx(-3), f.sy(-3)], [f.sx(3), f.sy(3)]], { cls: 'curve curve-ghost curve-dash' }),
     fnPath(f, x => x / (1 + LAM), { key: 's3-ridge', cls: 'curve curve-cyan' }),
-    fnPath(f, x => soft(x, LAM), { key: 's3-lasso', cls: 'curve curve-purple' }),
+    fnPath(f, x => soft(x, LAM), { key: 's3-lasso', cls: 'curve curve-cold' }),
     label('s3-lr', f.sx(2.6), f.sy(2.6 / (1 + LAM)) - 10, 'ridge', { cls: 'lab lab-cyan' }),
-    label('s3-ll', f.sx(2.6), f.sy(soft(2.6, LAM)) - 10, 'lasso', { cls: 'lab lab-purple' }),
+    label('s3-ll', f.sx(2.6), f.sy(soft(2.6, LAM)) - 10, 'lasso', { cls: 'lab lab-cold' }),
     label('s3-li', f.sx(-2.7), f.sy(-2.6) - 10, 'no penalty', { cls: 'lab-sm' }),
     rect('s3-flat', f.sx(-LAM), f.sy(0) - 1, f.sx(LAM) - f.sx(-LAM), 2, { cls: 'bar bar-warm' }),
     label('s3-flatl', f.sx(0), f.sy(0) + 22, `anything inside ±λ becomes exactly zero`, { cls: 'lab-sm lab-mid lab-warm' }),
     vLine(f, z, { key: 's3-z', cls: 'rule rule-gold' }),
     { key: 's3-pr', tag: 'circle', cls: 'pt pt-cyan', attrs: { cx: f.sx(z), cy: f.sy(z / (1 + LAM)), r: 7 } },
-    { key: 's3-pl', tag: 'circle', cls: 'pt pt-purple', attrs: { cx: f.sx(z), cy: f.sy(soft(z, LAM)), r: 7 } },
+    { key: 's3-pl', tag: 'circle', cls: 'pt pt-cold', attrs: { cx: f.sx(z), cy: f.sy(soft(z, LAM)), r: 7 } },
     numLabel('s3-vr', f.sx(z) + 12, f.sy(z / (1 + LAM)) + 4, z / (1 + LAM), { cls: 'lab lab-cyan', d: 3 }),
-    numLabel('s3-vl', f.sx(z) + 12, f.sy(soft(z, LAM)) + 4, soft(z, LAM), { cls: 'lab lab-purple', d: 3 }),
+    numLabel('s3-vl', f.sx(z) + 12, f.sy(soft(z, LAM)) + 4, soft(z, LAM), { cls: 'lab lab-cold', d: 3 }),
   ];
   return out;
 }
@@ -369,7 +369,7 @@ function scene4(stage) {
       const u = r * 1.5 * Math.cos(a), v = r * 0.45 * Math.sin(a);
       return [f.sx(B[0] + u * ct - v * stt), f.sy(B[1] + u * stt + v * ct)];
     });
-    out.push(path(`s4-e${i}`, pts, { cls: 'curve curve-ghost', opacity: 0.55, close: true, delay: i * 60 }));
+    out.push(path(`s4-e${i}`, pts, { cls: 'curve curve-ghost', opacity: 0.9, close: true, delay: i * 60 }));
   });
   out.push({ key: 's4-ols', tag: 'circle', cls: 'pt pt-warm', attrs: { cx: f.sx(B[0]), cy: f.sy(B[1]), r: 7 } });
   out.push(label('s4-olsl', f.sx(B[0]) + 12, f.sy(B[1]) - 8, 'least squares', { cls: 'lab lab-warm' }));
@@ -390,10 +390,10 @@ function scene4(stage) {
   if (stage === 2) {
     const pts = [[budget, 0], [0, budget], [-budget, 0], [0, -budget]].map(([a, b]) => [f.sx(a), f.sy(b)]);
     out.push(path('s4-region', pts, { cls: 'area area-cold', close: true, opacity: 0.5 }));
-    out.push(path('s4-regionl', pts, { cls: 'curve curve-purple', close: true }));
-    out.push({ key: 's4-hit', tag: 'circle', cls: 'pt pt-purple', attrs: { cx: f.sx(budget), cy: f.sy(0), r: 9 } });
-    out.push(label('s4-hl', f.sx(budget) + 14, f.sy(0) + 22, `β₁ = ${budget.toFixed(2)}, β₂ = 0`, { cls: 'lab lab-purple' }));
-    out.push(label('s4-note', f.midX, f.y1 - 10, 'the corner sits on the axis — β₂ is deleted', { cls: 'lab-sm lab-mid lab-purple' }));
+    out.push(path('s4-regionl', pts, { cls: 'curve curve-cold', close: true }));
+    out.push({ key: 's4-hit', tag: 'circle', cls: 'pt pt-cold', attrs: { cx: f.sx(budget), cy: f.sy(0), r: 9 } });
+    out.push(label('s4-hl', f.sx(budget) + 14, f.sy(0) + 22, `β₁ = ${budget.toFixed(2)}, β₂ = 0`, { cls: 'lab lab-cold' }));
+    out.push(label('s4-note', f.midX, f.y1 - 10, 'the corner sits on the axis — β₂ is deleted', { cls: 'lab-sm lab-mid lab-cold' }));
   }
   return out;
 }
@@ -560,9 +560,9 @@ function scene10() {
   return [
     axes(f, { xLabel: 'a coefficient, before seeing the data', yLabel: 'prior density', xN: 7, showY: false }),
     fnPath(f, x => nor(x) / mx, { key: 's10-n', cls: 'curve curve-cyan' }),
-    fnPath(f, x => lap(x) / mx, { key: 's10-l', cls: 'curve curve-purple' }),
+    fnPath(f, x => lap(x) / mx, { key: 's10-l', cls: 'curve curve-cold' }),
     label('s10-nl', f.sx(1.5), f.sy(nor(1.5) / mx) - 12, 'normal prior → ridge', { cls: 'lab lab-cyan' }),
-    label('s10-ll', f.sx(-1.6), f.sy(lap(1.6) / mx) - 12, 'laplace prior → lasso', { cls: 'lab lab-purple lab-end' }),
+    label('s10-ll', f.sx(-1.6), f.sy(lap(1.6) / mx) - 12, 'laplace prior → lasso', { cls: 'lab lab-cold lab-end' }),
     label('s10-sp', f.sx(0), f.sy(1) - 14, 'the spike is the whole story', { cls: 'lab-sm lab-mid lab-gold' }),
     label('s10-note', f.midX, f.y1 + 18,
       'a penalty is a prior. cross-validation only sets how loudly you assert it.',

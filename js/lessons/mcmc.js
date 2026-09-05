@@ -153,7 +153,7 @@ export default {
               ...runs.map((r, k) => path(`r-${k}`, r.map((v, i) => [f.sx(i), f.sy(v[0])]), {
                 cls: `curve ${['curve-cyan', 'curve-warm', 'curve-purple'][k]}`, delay: k * 220,
               })),
-              ...runs.map((r, k) => label(`rl-${k}`, f.sx(0) + 8, f.sy(r[0][0]) + (k === 0 ? -10 : 16),
+              ...runs.map((r, k) => label(`rl-${k}`, f.sx(0) + 8, f.sy(r[0][0]) + [-10, 16, 32][k],
                 `started ${STATES[k]}`, { cls: `lab-sm ${['lab-cyan', 'lab-warm', 'lab-purple'][k]}`, delay: k * 220 })),
             ];
           },
@@ -341,7 +341,7 @@ export default {
               ...axes(fb, { xLabel: 'θ', prefix: 'b', xN: 3, showY: false }),
               ...histBars(fb, bins, { key: 'h', cls: 'bar bar-cold', useDensity: true, dur: 200 }),
               fnPath(fb, truePost, { key: 'tp', cls: 'curve curve-fit curve-dash', n: 200 }),
-              label('r', 360, 500,
+              label('r', 360, 478,
                 `acceptance ${(rate * 100).toFixed(0)}% · effective sample size ${ess(k)} out of ${k.length}`,
                 { cls: 'lab-big lab-mid lab-gold', dur: 200 }),
               label('v', 360, 522,

@@ -72,7 +72,7 @@ const CW = 150, CH = 96, MX = 250, MY = 180;
 function matrix(g, { highlight = [], key = 'm', showBest = false, dur } = {}) {
   const items = [
     label(key + '-rt', MX - 20, MY - 46, 'you', { cls: 'lab lab-end lab-cyan' }),
-    label(key + '-ct', MX + CW, MY - 60, 'them', { cls: 'lab lab-mid lab-warm' }),
+    label(key + '-ct', MX + CW, MY - 38, 'them', { cls: 'lab lab-mid lab-warm' }),
     ...g.cols.map((c, j) => label(`${key}-ch-${j}`, MX + j * CW + CW / 2, MY - 20, c, { cls: 'lab-sm lab-mid lab-warm' })),
     ...g.rows.map((r, i) => label(`${key}-rh-${i}`, MX - 14, MY + i * CH + CH / 2 + 4, r, { cls: 'lab-sm lab-end lab-cyan' })),
   ];

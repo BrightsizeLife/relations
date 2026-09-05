@@ -485,7 +485,7 @@ function colliderWhy() {
     ...[1.4, 2.2, 3.0].map((k, i) => path('bl' + i, [[f.sx(-3.4), f.sy(k + 3.4)], [f.sx(3.4), f.sy(k - 3.4)]], {
       cls: 'curve curve-dash', set: { stroke: 'var(--cs-data-gold)', 'stroke-width': 1.2 }, opacity: 0.6,
     })),
-    label('bll', f.sx(2.4), f.sy(-1.6), 'lines of constant C', { cls: 'lab-sm lab-gold' }),
+    label('bll', f.sx(2.4), f.sy(-1.6), 'lines of constant C', { cls: 'lab-sm lab-end lab-gold' }),
     label('n1', 496, 152, 'C = X + Y + noise.', { cls: 'lab lab-gold' }),
     label('n2', 496, 186, 'so if C is high and X', { cls: 'lab-sm' }),
     label('n3', 496, 200, 'is low, Y has to be high', { cls: 'lab-sm' }),

@@ -59,12 +59,17 @@ export function knobCards(rows, {
       }));
     });
     const base = y + 42 + wrap(r.does, wrapAt).length * 15 + 6;
-    if (r.low) items.push(label(`${key}-lo-${i}`, x0 + 16, base + 8, '↓ ' + r.low, {
-      cls: 'lab-sm lab-cold', delay: i * 90,
-    }));
-    if (r.high) items.push(label(`${key}-hi-${i}`, x0 + 340, base + 8, '↑ ' + r.high, {
-      cls: 'lab-sm lab-warm', delay: i * 90,
-    }));
+    // each consequence gets its own column, and is wrapped to it — a long
+    // sentence used to simply run underneath the one beside it
+    const half = Math.max(18, Math.floor(((x1 - x0) / 2 - 26) / 5.7));
+    if (r.low) wrap('↓ ' + r.low, half).slice(0, 2).forEach((ln, k) =>
+      items.push(label(`${key}-lo-${i}-${k}`, x0 + 16, base + 8 + k * 13, ln, {
+        cls: 'lab-sm lab-cold', delay: i * 90,
+      })));
+    if (r.high) wrap('↑ ' + r.high, half).slice(0, 2).forEach((ln, k) =>
+      items.push(label(`${key}-hi-${i}-${k}`, x0 + (x1 - x0) / 2 + 10, base + 8 + k * 13, ln, {
+        cls: 'lab-sm lab-warm', delay: i * 90,
+      })));
   });
   return items;
 }
