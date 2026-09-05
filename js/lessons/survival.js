@@ -180,10 +180,14 @@ export default {
         { label: 'and the method that works', scene: () => scene3(3), note: 'flat across the whole range. that is the thing worth explaining.' },
       ],
       readouts: [
-        { key: 'w', label: 'at 73% censored · drop', tone: 'warm', get: () => BIAS[5].drop, d: 2 },
-        { key: 'c', label: 'at 73% censored · as events', tone: 'cold', get: () => BIAS[5].asEvent, d: 2 },
-        { key: 'k', label: 'at 73% censored · kaplan–meier', tone: 'green', get: () => BIAS[5].km, d: 2 },
-        { key: 't', label: 'true median', tone: 'muted', get: () => BIAS[0].truth, d: 2 },
+        { key: 'w', label: 'drop censored', tone: 'warm', get: () => BIAS[5].drop, d: 2,
+          explain: 'Median of the observed times among people who had the event, at the heaviest censoring on the plot.' },
+        { key: 'c', label: 'count as events', tone: 'cold', get: () => BIAS[5].asEvent, d: 2,
+          explain: 'Median of every observed time, treating a censored person as though the event happened when we stopped watching.' },
+        { key: 'k', label: 'kaplan–meier', tone: 'green', get: () => BIAS[5].km, d: 2,
+          explain: 'The product-limit median, at the same 73% censoring.' },
+        { key: 't', label: 'the truth', tone: 'muted', get: () => BIAS[0].truth, d: 2,
+          explain: 'ln 2 divided by the hazard rate the data was simulated from.' },
       ],
     },
 
